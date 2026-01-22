@@ -11,7 +11,7 @@ import { toast } from 'react-hot-toast';
 import { jwtDecode } from 'jwt-decode';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login, user } = useAuth();
@@ -33,7 +33,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username || !password) {
+    if (!email || !password) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -41,7 +41,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       // 1. Call login API and get token string
-      const token = await authApi.login({ username, password });
+      const token = await authApi.login({ email, password });
       if (!token) {
         toast.error('No token received from server');
         return;
@@ -91,13 +91,13 @@ const Login = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username or Email</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="username or email@example.com"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                placeholder="email@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
                 className="h-11"
               />
