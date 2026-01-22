@@ -1,6 +1,10 @@
+import React from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, DoorOpen, Calendar, Shield } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const stats = [
@@ -19,7 +23,7 @@ const Dashboard = () => {
       bgColor: 'bg-green-100',
     },
     {
-      title: 'Today\'s Appointments',
+      title: "Today's Appointments",
       value: '28',
       icon: Calendar,
       color: 'text-purple-600',
@@ -33,17 +37,24 @@ const Dashboard = () => {
       bgColor: 'bg-orange-100',
     },
   ];
-
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <Button variant="destructive" className="float-right" onClick={handleLogout}>
+            Logout
+          </Button>
           <p className="text-muted-foreground mt-1">
             Welcome back! Here's an overview of your system.
           </p>
         </div>
-
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => (
             <Card key={stat.title} className="glass-card hover:shadow-lg transition-shadow">
@@ -61,7 +72,6 @@ const Dashboard = () => {
             </Card>
           ))}
         </div>
-
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="glass-card">
             <CardHeader>
@@ -86,7 +96,6 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
-
           <Card className="glass-card">
             <CardHeader>
               <CardTitle>System Status</CardTitle>

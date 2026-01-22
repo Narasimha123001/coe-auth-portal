@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { authApi } from '@/api/authApi';
 import { Button } from '@/components/ui/button';
@@ -8,49 +8,65 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { jwtDecode } from 'jwt-decode';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
+  // (Removed misplaced code outside of useEffect)
   useEffect(() => {
     // Redirect if already logged in
     if (user) {
       const dashboardMap: Record<string, string> = {
         admin: '/admin/dashboard',
         staff: '/staff/appointments',
-        student: '/student/book',
+        student: '/student/dashboard',
       };
-      navigate(dashboardMap[user.role] || '/');
+      navigate(dashboardMap[user.role?.toLowerCase()] || '/');
     }
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!username || !password) {
       toast.error('Please fill in all fields');
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await authApi.login({ email, password });
-      login(response.token);
-      toast.success('Login successful!');
-      
-      // Redirect based on role
-      const dashboardMap: Record<string, string> = {
-        admin: '/admin/dashboard',
-        staff: '/staff/appointments',
-        student: '/student/book',
-      };
-      navigate(dashboardMap[response.role] || '/');
+      // 1. Call login API and get token string
+      const token = await authApi.login({ username, password });
+      if (!token) {
+        toast.error('No token received from server');
+        return;
+      }
+      // 2. Store JWT token securely
+      localStorage.setItem("token", token);
+      // 3. Decode token and extract role
+      const decoded: any = jwtDecode(token);
+      const role = decoded.role?.toLowerCase();
+      // 4. Role-based redirect
+      if (role === "student") {
+        navigate("/student/dashboard");
+      } else if (role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (role === "staff") {
+        navigate("/staff/appointments");
+      } else {
+        navigate("/");
+      }
+      // 5. Update auth context
+      login(token);
+      toast.success("Login successful!");
     } catch (error: any) {
       console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
       toast.error(error.response?.data?.message || 'Invalid credentials');
     } finally {
       setIsLoading(false);
@@ -58,6 +74,7 @@ const Login = () => {
   };
 
   return (
+
     <div className="min-h-screen flex items-center justify-center gradient-subtle p-4">
       <Card className="w-full max-w-md glass-card">
         <CardHeader className="space-y-4 text-center">
@@ -74,13 +91,13 @@ const Login = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Username or Email</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="your.email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                placeholder="username or email@example.com"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 disabled={isLoading}
                 className="h-11"
               />
@@ -98,7 +115,7 @@ const Login = () => {
               />
             </div>
             <Button 
-              type="submit" 
+              type="submit"
               className="w-full h-11 text-base font-medium"
               disabled={isLoading}
             >
@@ -111,11 +128,32 @@ const Login = () => {
                 'Sign In'
               )}
             </Button>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-card text-muted-foreground">
+                  New user?
+                </span>
+              </div>
+            </div>
+            <Button 
+              type="button"
+              variant="outline"
+              className="w-full h-11 text-base"
+              disabled={isLoading}
+              asChild
+            >
+              <Link to="/register">
+                Create Account
+              </Link>
+            </Button>
           </form>
         </CardContent>
       </Card>
     </div>
   );
-};
+}
 
 export default Login;

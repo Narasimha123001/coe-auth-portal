@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser({
             registerNumber: decoded.registerNumber,
             email: decoded.email,
-            role: decoded.role,
+            role: decoded.role?.toLowerCase(),
           });
         } else {
           localStorage.removeItem('token');
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser({
         registerNumber: decoded.registerNumber,
         email: decoded.email,
-        role: decoded.role,
+        role: decoded.role?.toLowerCase(),
       });
     } catch (error) {
       console.error('Failed to decode token:', error);

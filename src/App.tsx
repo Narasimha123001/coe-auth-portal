@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -23,20 +24,22 @@ import EntryLogs from "./pages/staff/EntryLogs";
 import BookAppointment from "./pages/student/BookAppointment";
 import StudentAppointments from "./pages/student/StudentAppointments";
 
+// Dashboard pages
+import StudentDashboard from "./pages/student/Dashboard";
+import StaffDashboard from "./pages/staff/Dashboard";
+
 const queryClient = new QueryClient();
 
 const RootRedirect = () => {
   const { user, isLoading } = useAuth();
-
   if (isLoading) return null;
-
   if (!user) return <Navigate to="/login" replace />;
-
   const dashboardMap: Record<string, string> = {
     admin: '/admin/dashboard',
     staff: '/staff/appointments',
-    student: '/student/book',
+    student: '/student/dashboard',
   };
+  return <Navigate to={dashboardMap[user.role] || '/login'} replace />;
 
   return <Navigate to={dashboardMap[user.role] || '/login'} replace />;
 };
@@ -58,10 +61,11 @@ const App = () => (
             },
           }}
         />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/" element={<RootRedirect />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             
             {/* Admin Routes */}
             <Route
@@ -116,6 +120,22 @@ const App = () => (
             />
 
             {/* Student Routes */}
+                        <Route
+                          path="/student/dashboard"
+                          element={
+                            <ProtectedRoute allowedRoles={["student"]}>
+                              <StudentDashboard />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/staff/dashboard"
+                          element={
+                            <ProtectedRoute allowedRoles={["staff"]}>
+                              <StaffDashboard />
+                            </ProtectedRoute>
+                          }
+                        />
             <Route
               path="/student/book"
               element={

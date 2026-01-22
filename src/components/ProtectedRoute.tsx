@@ -21,13 +21,12 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     // Redirect to appropriate dashboard based on role
     const dashboardMap: Record<string, string> = {
       admin: '/admin/dashboard',
-      staff: '/staff/home',
-      student: '/student/home',
+      staff: '/staff/dashboard',
+      student: '/student/dashboard',
     };
     return <Navigate to={dashboardMap[user.role] || '/login'} replace />;
   }
