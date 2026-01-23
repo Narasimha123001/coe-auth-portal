@@ -23,6 +23,7 @@ import EntryLogs from "./pages/staff/EntryLogs";
 // Student pages
 import BookAppointment from "./pages/student/BookAppointment";
 import StudentAppointments from "./pages/student/StudentAppointments";
+import StudentProfile from "./pages/student/Profile";
 
 // Dashboard pages
 import StudentDashboard from "./pages/student/Dashboard";
@@ -149,6 +150,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentAppointments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/profile"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentProfile />
                 </ProtectedRoute>
               }
             />
