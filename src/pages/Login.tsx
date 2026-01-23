@@ -17,7 +17,6 @@ const Login = () => {
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  // (Removed misplaced code outside of useEffect)
   useEffect(() => {
     // Redirect if already logged in
     if (user) {
@@ -46,12 +45,18 @@ const Login = () => {
         toast.error('No token received from server');
         return;
       }
-      // 2. Store JWT token securely
+      
+      // 2. Store JWT token in localStorage
       localStorage.setItem("token", token);
-      // 3. Decode token and extract role
+      
+      // 3. Update auth context FIRST
+      login(token);
+      
+      // 4. Decode token and extract role
       const decoded: any = jwtDecode(token);
       const role = decoded.role?.toLowerCase();
-      // 4. Role-based redirect
+      
+      // 5. Role-based redirect
       if (role === "student") {
         navigate("/student/dashboard");
       } else if (role === "admin") {
@@ -61,8 +66,7 @@ const Login = () => {
       } else {
         navigate("/");
       }
-      // 5. Update auth context
-      login(token);
+      
       toast.success("Login successful!");
     } catch (error: any) {
       console.error('Login error:', error);
