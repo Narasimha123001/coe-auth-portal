@@ -48,9 +48,6 @@ const Dashboard = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <Button variant="destructive" className="float-right" onClick={handleLogout}>
-            Logout
-          </Button>
           <p className="text-muted-foreground mt-1">
             Welcome back! Here's an overview of your system.
           </p>
