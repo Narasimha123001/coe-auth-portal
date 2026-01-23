@@ -16,16 +16,24 @@ api.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("[Axios] Token attached:", token.substring(0, 20) + "...");
+    } else {
+      console.warn("[Axios] No token found in localStorage");
     }
+    console.log("[Axios] Request to:", config.url);
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Global 401 handler
+// Global error handler
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log("[Axios] Response OK:", response.status);
+    return response;
+  },
   (error) => {
+    console.error("[Axios] Error:", error.response?.status, error.message);
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       window.location.href = "/login";
