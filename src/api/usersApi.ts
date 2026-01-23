@@ -9,6 +9,15 @@ export interface User {
   name?: string;
 }
 
+export interface StudentProfile {
+  registerNo: number;
+  name: string;
+  email: string;
+  departmentName: string;
+  year: number;
+  semester: number;
+}
+
 export const usersApi = {
   getAll: async (): Promise<User[]> => {
     const response = await api.get('/users');
@@ -27,5 +36,10 @@ export const usersApi = {
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/users/${id}`);
+  },
+
+  getStudentProfile: async (): Promise<StudentProfile> => {
+    const response = await api.get('v1/student/me');
+    return response.data;
   },
 };
