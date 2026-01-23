@@ -26,7 +26,7 @@ const Navbar = () => {
             <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+        <Button variant="destructive" size="sm" onClick={handleLogout} className="gap-2">
           <LogOut className="h-4 w-4" />
           Logout
         </Button>
