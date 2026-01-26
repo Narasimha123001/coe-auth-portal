@@ -7,7 +7,8 @@ import {
   Calendar, 
   CheckCircle, 
   FileText,
-  Shield 
+  Shield ,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +38,14 @@ const navItems: NavItem[] = [
     icon: DoorOpen,
     roles: ['admin'],
   },
+  
   {
+    title: 'Dashboard',
+    href: '/staff/dashboard',
+    icon: LayoutDashboard,
+    roles: ['staff'],
+  }
+  ,{
     title: 'My Appointments',
     href: '/staff/appointments',
     icon: Calendar,
@@ -55,6 +63,21 @@ const navItems: NavItem[] = [
     icon: FileText,
     roles: ['staff'],
   },
+
+  {
+    title: 'Dashboard',
+    href: '/student/dashboard',
+    icon: LayoutDashboard,
+    roles: ['student'],
+  },
+
+  {
+    title: 'Profile',
+    href: '/student/profile',
+    icon: User,
+    roles: ['student'],
+  },
+  
   {
     title: 'Book Appointment',
     href: '/student/book',
