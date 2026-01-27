@@ -18,6 +18,18 @@ export interface StudentProfile {
   semester: number;
 }
 
+
+export interface Subject{
+  subjectCode : string;
+  title: string;
+}
+
+export interface StudentSubjectsResponse{
+
+  email: string;
+  subjects: Subject[];
+}
+
 export const usersApi = {
   getAll: async (): Promise<User[]> => {
     const response = await api.get('/users');
@@ -39,7 +51,14 @@ export const usersApi = {
   },
 
   getStudentProfile: async (): Promise<StudentProfile> => {
-    const response = await api.get('v1/student/me');
+    const response = await api.get('/v1/student/me');
     return response.data;
   },
+
+
+  getStudentSubjects: async (): Promise<StudentSubjectsResponse> => {
+  const response = await api.get('/v1/student/subjects');
+  return response.data;
+},
+
 };
