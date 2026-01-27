@@ -24,6 +24,7 @@ import EntryLogs from "./pages/staff/EntryLogs";
 import BookAppointment from "./pages/student/BookAppointment";
 import StudentAppointments from "./pages/student/StudentAppointments";
 import  StudentProfile from "./pages/student/Profile";
+import StudentSubjectPage from "./pages/student/Subject"
 
 // Dashboard pages
 import StudentDashboard from "./pages/student/Dashboard";
@@ -158,6 +159,15 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/student/Subject"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentSubjectPage />
                 </ProtectedRoute>
               }
             />
