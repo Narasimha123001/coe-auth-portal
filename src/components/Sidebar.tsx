@@ -4,6 +4,7 @@ import {
   LayoutDashboard, 
   Users, 
   DoorOpen, 
+  BookOpen,
   Calendar, 
   CheckCircle, 
   FileText,
@@ -84,6 +85,14 @@ const navItems: NavItem[] = [
     icon: Calendar,
     roles: ['student'],
   },
+
+  {
+    title: 'Subjects',
+    href: '/student/Subject',
+    icon: BookOpen,
+    roles: ['student'],
+  },
+
   {
     title: 'My Appointments',
     href: '/student/appointments',
