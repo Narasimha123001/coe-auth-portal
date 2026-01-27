@@ -15,6 +15,7 @@ export interface StudentProfile {
   email: string;
   departmentName: string;
   year: number;
+  phoneNo: string;
   semester: number;
 }
 

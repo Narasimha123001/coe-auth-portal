@@ -72,6 +72,7 @@ const StudentProfile = () => {
               <Info label="Email" value={profile.email} />
               <Info label="Department" value={profile.departmentName} />
               <Info label="Year" value={`Year ${profile.year}`} />
+              <Info label = "PhoneNo" value={profile.phoneNo}/>
               <Info label="Semester" value={`Semester ${profile.semester}`} />
             </div>
           </CardContent>
