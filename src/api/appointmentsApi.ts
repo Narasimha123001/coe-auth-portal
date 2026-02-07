@@ -51,7 +51,7 @@ export const appointmentsApi = {
     appointmentDateTime: string;
     purpose: string;
   }) => {
-    const response = await api.post(
+     const response = await api.post(
       `/v1/appointments/book`,
       appointment
     );
