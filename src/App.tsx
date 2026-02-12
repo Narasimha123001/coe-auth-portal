@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import RoomAccess from "./pages/admin/RoomAccess";
+import AdminAppointments from "./pages/admin/Appointments";
 
 // Staff pages
 import StaffAppointments from "./pages/staff/MyAppointments";
@@ -85,6 +86,17 @@ const App = () => (
                   <UserManagement />
                 </ProtectedRoute>
               }
+            />
+
+            <Route
+            path="/admin/appointments"
+            element = {
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminAppointments/>
+              </ProtectedRoute>
+            }
+            
+            
             />
             <Route
               path="/admin/rooms"

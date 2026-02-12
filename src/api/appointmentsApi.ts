@@ -47,6 +47,28 @@ export const appointmentsApi = {
     }
   },
 
+getAll: async (): Promise<Appointment[]> => {
+  try {
+    const response = await api.get(`/v1/appointments`);
+
+    if (response.status === 204 || !response.data) {
+      return [];
+    }
+
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+
+    return [];
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      return [];
+    }
+    throw error;
+  }
+},
+
+
   create: async (appointment: {
     appointmentDateTime: string;
     purpose: string;

@@ -27,6 +27,13 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
     roles: ['admin'],
   },
+
+    {
+    title: 'Appointments',
+    href: '/admin/appointments',
+    icon: Calendar,
+    roles: ['admin'],
+  },
   {
     title: 'User Management',
     href: '/admin/users',
