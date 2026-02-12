@@ -22,7 +22,7 @@ const Login = () => {
     if (user) {
       const dashboardMap: Record<string, string> = {
         admin: '/admin/dashboard',
-        staff: '/staff/appointments',
+        staff: '/staff/dashboard',
         student: '/student/dashboard',
       };
       navigate(dashboardMap[user.role?.toLowerCase()] || '/');
@@ -62,7 +62,7 @@ const Login = () => {
       } else if (role === "admin") {
         navigate("/admin/dashboard");
       } else if (role === "staff") {
-        navigate("/staff/appointments");
+        navigate("/staff/dashboard");
       } else {
         navigate("/");
       }
