@@ -1,5 +1,12 @@
+import { create } from 'domain';
 import api from './axios';
+import { access } from 'fs';
 
+
+export interface Room{
+  blackRoomNumber : number;
+  blackRoomName : string;
+}
 export interface RoomAccess {
   staffId: string;
   roomName: string;
@@ -17,6 +24,20 @@ export interface ValidationResult {
 }
 
 export const roomsApi = {
+  create: async (room: Room): Promise<Room> =>{
+    const response = await api.post('/v1/blackRoom/add/room', room);
+    return response.data;
+  },
+  update: async (room: Room): Promise<Room> =>{
+    const response = await api.put('/blackRoom/update/room' , room);
+    return response.data
+  },
+
+  getRooms: async (): Promise<Room[]> => {
+    const response = await api.get('/v1/blackRoom');
+    return response.data;
+  },
+
   assignAccess: async (access: RoomAccess): Promise<void> => {
     await api.post('/rooms/assign', access);
   },
