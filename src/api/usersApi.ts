@@ -30,8 +30,17 @@ export interface StudentSubjectsResponse{
   email: string;
   subjects: Subject[];
 }
+export interface StaffRespone{
+  registerNumber : number;
+  name : String ;
+}
 
 export const usersApi = {
+
+  getAllStaff: async (): Promise<StaffRespone[]> => {
+    const response = await api.get('/v1/staff');
+    return response.data;
+  },
   getAll: async (): Promise<User[]> => {
     const response = await api.get('/users');
     return response.data;
