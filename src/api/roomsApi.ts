@@ -7,21 +7,23 @@ export interface Room{
   blackRoomNumber : number;
   blackRoomName : string;
 }
-export interface RoomAccess {
-  staffId: string;
-  roomName: string;
+export interface AssignAccessRequest  {
+  blackRoomId: number;
+  registerNumber: number;
 }
 
 export interface RoomAccessList {
-  staffId: string;
-  staffName?: string;
-  roomName: string;
+  registerNumber : number;
+  userName: string;
+  blackRoomName : string;
 }
 
 export interface ValidationResult {
   allowed: boolean;
   message: string;
 }
+
+
 
 export const roomsApi = {
   create: async (room: Room): Promise<Room> =>{
@@ -38,16 +40,17 @@ export const roomsApi = {
     return response.data;
   },
 
-  assignAccess: async (access: RoomAccess): Promise<void> => {
-    await api.post('/rooms/assign', access);
+  assignAccess: async (data: AssignAccessRequest ): Promise<void> => {
+    await api.post('/v1/blackRoom/assign', data);
   },
 
-  removeAccess: async (staffId: string, roomName: string): Promise<void> => {
-    await api.delete(`/rooms/remove/${staffId}/${roomName}`);
-  },
+  removeAccess: async (registerNumber: string, roomName: string): Promise<void> => {
+  await api.delete(`/v1/blackRoom/remove/${registerNumber}/${encodeURIComponent(roomName)}`);
+},
+
 
   getAccessList: async (): Promise<RoomAccessList[]> => {
-    const response = await api.get('/rooms/access-list');
+    const response = await api.get('/v1/blackRoom/access-list');
     return response.data;
   },
 

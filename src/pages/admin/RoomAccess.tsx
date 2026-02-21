@@ -42,8 +42,8 @@ const RoomAccess = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
-    staffId: "",
-    roomName: "",
+    registerNumber: "",
+    blackRoomId: "",
   });
 
   useEffect(() => {
@@ -108,14 +108,24 @@ const RoomAccess = () => {
   /* ---------------- ASSIGN ACCESS ---------------- */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
-      await roomsApi.assignAccess(formData);
+      await roomsApi.assignAccess({
+        blackRoomId: Number(formData.blackRoomId),
+        registerNumber: Number(formData.registerNumber),
+      });
+
       toast.success("Access granted successfully");
+
       setIsDialogOpen(false);
-      setFormData({ staffId: "", roomName: "" });
+      setFormData({ registerNumber: "", blackRoomId: "" });
       fetchAccessList();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to grant access");
+      const msg =
+        error?.response?.data?.message ||
+        error?.response?.data ||
+        "Failed to grant access";
+      toast.error(msg);
     }
   };
 
@@ -210,56 +220,67 @@ const RoomAccess = () => {
               </TableBody>
             </Table>
           </Card>
-</div>
-          {/* ---------------- ACCESS SECTION ---------------- */}
-          <Card className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Room Access Control</h2>
-              <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Grant Access
-              </Button>
-            </div>
+        </div>
+        {/* ---------------- ACCESS SECTION ---------------- */}
+        <Card className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Room Access Control</h2>
+            <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Grant Access
+            </Button>
+          </div>
 
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Register Number</TableHead>
+                  <TableHead>User Name</TableHead>
+                  <TableHead>Room</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {accessList.length === 0 ? (
                   <TableRow>
-                    <TableHead>Staff ID</TableHead>
-                    <TableHead>Staff Name</TableHead>
-                    <TableHead>Room</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center text-muted-foreground"
+                    >
+                      No access assigned yet
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {accessList.map((access, i) => (
+                ) : (
+                  accessList.map((access, i) => (
                     <TableRow key={i}>
-                      <TableCell>{access.staffId}</TableCell>
-                      <TableCell>{access.staffName || "-"}</TableCell>
-                      <TableCell>{access.roomName}</TableCell>
+                      <TableCell>{access.registerNumber}</TableCell>
+                      <TableCell>{access.userName || "-"}</TableCell>
+                      <TableCell>{access.blackRoomName}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            handleRemove(access.staffId, access.roomName)
+                            handleRemove(access.registerNumber.toString(), access.blackRoomName)
                           }
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </Card>
-        </div>
-      
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </Card>
+      </div>
 
       {/* ---------------- ADD ROOM DIALOG ---------------- */}
       <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
@@ -301,6 +322,71 @@ const RoomAccess = () => {
                 Cancel
               </Button>
               <Button type="submit">Create</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ---------------- GRANT ACCESS DIALOG ---------------- */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Grant Room Access</DialogTitle>
+            <DialogDescription>
+              Assign a staff member to a room
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Register Number Dropdown (from staff list) */}
+            <div className="space-y-2">
+              <Label>Select Staff</Label>
+              <select
+                className="w-full border rounded-md p-2"
+                value={formData.registerNumber}
+                onChange={(e) =>
+                  setFormData({ ...formData, registerNumber: e.target.value })
+                }
+                required
+              >
+                <option value="">Choose staff</option>
+                {staff.map((s) => (
+                  <option key={s.registerNumber} value={s.registerNumber}>
+                    {s.registerNumber} - {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Room Dropdown */}
+            <div className="space-y-2">
+              <Label>Select Room</Label>
+              <select
+                className="w-full border rounded-md p-2"
+                value={formData.blackRoomId}
+                onChange={(e) =>
+                  setFormData({ ...formData, blackRoomId: e.target.value })
+                }
+                required
+              >
+                <option value="">Choose room</option>
+                {rooms.map((room) => (
+                  <option key={room.blackRoomName} value={room.blackRoomNumber}>
+                    {room.blackRoomNumber} - {room.blackRoomName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Grant Access</Button>
             </DialogFooter>
           </form>
         </DialogContent>
