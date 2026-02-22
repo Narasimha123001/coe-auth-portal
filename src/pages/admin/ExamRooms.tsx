@@ -197,48 +197,78 @@ const ExamRooms = () => {
 
   /* ================= UI ================= */
 
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
+return (
+  <DashboardLayout>
+    <div className="space-y-8">
+
+      {/* PAGE HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Exam Rooms
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Manage seating capacity and room details
+          </p>
+        </div>
+
+        <button
+          onClick={() => setIsAddOpen(true)}
+          className="bg-primary text-white px-4 py-2 rounded-lg shadow hover:opacity-90 transition"
+        >
+          + Add Room
+        </button>
+      </div>
+
+      {/* STATS CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <Card className="p-6">
-          {/* HEADER */}
-          <div className="flex items-center gap-4 mb-4">
-            <h2 className="text-2xl font-semibold">Exam Rooms Management</h2>
+          <p className="text-sm text-muted-foreground">Total Rooms</p>
+          <h2 className="text-2xl font-bold">{rooms.length}</h2>
+        </Card>
 
-            <button
-              onClick={() => setIsAddOpen(true)}
-              className="bg-green-600 text-white px-3 py-1.5 text-sm rounded hover:bg-green-700 transition"
-            >
-              + Add Room
-            </button>
+        <Card className="p-6">
+          <p className="text-sm text-muted-foreground">Total Capacity</p>
+          <h2 className="text-2xl font-bold">
+            {rooms.reduce((acc, r) => acc + r.totalCapacity, 0)}
+          </h2>
+        </Card>
+
+        <Card className="p-6">
+          <p className="text-sm text-muted-foreground">Average Capacity</p>
+          <h2 className="text-2xl font-bold">
+            {rooms.length > 0
+              ? Math.floor(
+                  rooms.reduce((acc, r) => acc + r.totalCapacity, 0) /
+                    rooms.length,
+                )
+              : 0}
+          </h2>
+        </Card>
+      </div>
+
+      {/* TABLE CARD */}
+      <Card className="p-6 shadow-sm">
+
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-
-          {/* LOADING */}
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
+        ) : (
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead
-                    className="cursor-pointer select-none"
                     onClick={toggleSort}
+                    className="cursor-pointer select-none"
                   >
-                    <div className="flex items-center gap-1">
-                      Room ID
-                      {sortDirection === "asc" ? (
-                        <ArrowUp size={14} />
-                      ) : (
-                        <ArrowDown size={14} />
-                      )}
-                    </div>
+                    Room Number
                   </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Benches</TableHead>
                   <TableHead>Seats / Bench</TableHead>
-                  <TableHead>Total Capacity</TableHead>
+                  <TableHead>Capacity</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -249,22 +279,27 @@ const ExamRooms = () => {
                   <TableRow>
                     <TableCell
                       colSpan={7}
-                      className="text-center text-muted-foreground"
+                      className="text-center py-12 text-muted-foreground"
                     >
-                      No exam rooms available
+                      No exam rooms found
                     </TableCell>
                   </TableRow>
                 ) : (
                   sortedRooms.map((room) => (
-                    <TableRow key={room.roomNumber}>
-                      <TableCell>{room.roomNumber}</TableCell>
+                    <TableRow
+                      key={room.roomNumber}
+                      className="hover:bg-muted/40 transition"
+                    >
+                      <TableCell className="font-medium">
+                        {room.roomNumber}
+                      </TableCell>
 
                       <TableCell>
                         {editingRoomId === room.roomNumber ? (
                           <input
                             value={editedRoom.name || ""}
                             onChange={(e) => handleChange(e, "name")}
-                            className="border px-2 py-1 rounded"
+                            className="border px-3 py-1 rounded-md w-full"
                           />
                         ) : (
                           room.name
@@ -277,7 +312,7 @@ const ExamRooms = () => {
                             type="number"
                             value={editedRoom.benchesTotal || ""}
                             onChange={(e) => handleChange(e, "benchesTotal")}
-                            className="border px-2 py-1 rounded"
+                            className="border px-3 py-1 rounded-md w-24"
                           />
                         ) : (
                           room.benchesTotal
@@ -290,7 +325,7 @@ const ExamRooms = () => {
                             type="number"
                             value={editedRoom.seatsPerBench || ""}
                             onChange={(e) => handleChange(e, "seatsPerBench")}
-                            className="border px-2 py-1 rounded"
+                            className="border px-3 py-1 rounded-md w-24"
                           />
                         ) : (
                           room.seatsPerBench
@@ -298,9 +333,11 @@ const ExamRooms = () => {
                       </TableCell>
 
                       <TableCell>
-                        {editingRoomId === room.roomNumber
-                          ? editedRoom.totalCapacity
-                          : room.totalCapacity}
+                        <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+                          {editingRoomId === room.roomNumber
+                            ? editedRoom.totalCapacity
+                            : room.totalCapacity}
+                        </span>
                       </TableCell>
 
                       <TableCell>
@@ -308,52 +345,46 @@ const ExamRooms = () => {
                           <input
                             value={editedRoom.location || ""}
                             onChange={(e) => handleChange(e, "location")}
-                            className="border px-2 py-1 rounded"
+                            className="border px-3 py-1 rounded-md w-full"
                           />
                         ) : (
                           room.location
                         )}
                       </TableCell>
 
-                      <TableCell className="text-right relative">
+                      <TableCell className="text-right">
                         {editingRoomId === room.roomNumber ? (
-                          <button
-                            onClick={handleSave}
-                            className="bg-blue-600 text-white px-3 py-1 rounded"
-                          >
-                            Save
-                          </button>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={handleSave}
+                              className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingRoomId(null)}
+                              className="border px-3 py-1 rounded-md text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         ) : (
-                          <>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleEdit(room)}
+                              className="text-sm text-blue-600 hover:underline"
+                            >
+                              Edit
+                            </button>
                             <button
                               onClick={() =>
-                                setOpenMenuId(
-                                  openMenuId === room.roomNumber
-                                    ? null
-                                    : room.roomNumber,
-                                )
+                                handleDelete(room.roomNumber)
                               }
+                              className="text-sm text-red-600 hover:underline"
                             >
-                              <MoreVertical size={18} />
+                              Delete
                             </button>
-
-                            {openMenuId === room.roomNumber && (
-                              <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-md z-10">
-                                <button
-                                  onClick={() => handleEdit(room)}
-                                  className="block w-full text-left px-3 py-2 hover:bg-gray-100"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(room.roomNumber)}
-                                  className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            )}
-                          </>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -361,78 +392,86 @@ const ExamRooms = () => {
                 )}
               </TableBody>
             </Table>
-          )}
+          </div>
+        )}
+      </Card>
 
-          {/* ADD ROOM MODAL */}
-          {isAddOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg w-[400px] space-y-4">
-                <h3 className="text-lg font-semibold">Add New Room</h3>
+      {/* ADD ROOM MODAL */}
+      {isAddOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
+            <h3 className="text-xl font-semibold">Create New Room</h3>
 
+            <div className="space-y-3">
+              <input
+                type="number"
+                placeholder="Room Number"
+                value={newRoom.roomNumber}
+                onChange={(e) => handleNewRoomChange(e, "roomNumber")}
+                className="w-full border px-4 py-2 rounded-lg"
+              />
+
+              <input
+                placeholder="Room Name"
+                value={newRoom.name}
+                onChange={(e) => handleNewRoomChange(e, "name")}
+                className="w-full border px-4 py-2 rounded-lg"
+              />
+
+              <div className="grid grid-cols-2 gap-3">
                 <input
                   type="number"
-                  placeholder="Enter Room Number"
-                  value={newRoom.roomNumber}
-                  onChange={(e) => handleNewRoomChange(e, "roomNumber")}
-                  className="w-full border px-3 py-2 rounded"
-                />
-
-                <input
-                  placeholder="Enter Room Name"
-                  value={newRoom.name}
-                  onChange={(e) => handleNewRoomChange(e, "name")}
-                  className="w-full border px-3 py-2 rounded"
-                />
-
-                <input
-                  type="number"
-                  placeholder="Enter Total Benches"
+                  placeholder="Benches"
                   value={newRoom.benchesTotal}
                   onChange={(e) => handleNewRoomChange(e, "benchesTotal")}
-                  className="w-full border px-3 py-2 rounded"
+                  className="border px-4 py-2 rounded-lg"
                 />
 
                 <input
                   type="number"
-                  placeholder="Enter Seats Per Bench"
+                  placeholder="Seats / Bench"
                   value={newRoom.seatsPerBench}
                   onChange={(e) => handleNewRoomChange(e, "seatsPerBench")}
-                  className="w-full border px-3 py-2 rounded"
+                  className="border px-4 py-2 rounded-lg"
                 />
+              </div>
 
-                <input
-                  placeholder="Enter Location"
-                  value={newRoom.location}
-                  onChange={(e) => handleNewRoomChange(e, "location")}
-                  className="w-full border px-3 py-2 rounded"
-                />
+              <input
+                placeholder="Location"
+                value={newRoom.location}
+                onChange={(e) => handleNewRoomChange(e, "location")}
+                className="w-full border px-4 py-2 rounded-lg"
+              />
 
-                <div className="text-sm text-gray-600">
-                  Total Capacity: {newRoom.totalCapacity}
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    onClick={() => setIsAddOpen(false)}
-                    className="px-4 py-2 border rounded"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    onClick={handleCreateRoom}
-                    className="bg-green-600 text-white px-4 py-2 rounded"
-                  >
-                    Save
-                  </button>
-                </div>
+              <div className="bg-muted p-3 rounded-lg text-sm">
+                Total Capacity:
+                <span className="font-semibold ml-2">
+                  {newRoom.totalCapacity}
+                </span>
               </div>
             </div>
-          )}
-        </Card>
-      </div>
-    </DashboardLayout>
-  );
+
+            <div className="flex justify-end gap-3 pt-4">
+              <button
+                onClick={() => setIsAddOpen(false)}
+                className="px-4 py-2 border rounded-lg"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleCreateRoom}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </DashboardLayout>
+);
 };
 
 export default ExamRooms;
