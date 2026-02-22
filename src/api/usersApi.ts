@@ -15,11 +15,13 @@ export interface Student {
 }
 
 export interface PageResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number; // current page
+  content: T[]
+  page: {
+    size: number
+    number: number
+    totalElements: number
+    totalPages: number
+  }
 }
 
 export interface StudentProfile {
@@ -53,17 +55,23 @@ export const usersApi = {
   },
 
   getAll: async (
-    page: number = 0,
-    size: number = 20
+    page: number,
+    size: number,
+    search: string,
+    sort: string
   ): Promise<PageResponse<Student>> => {
 
-    const response = await api.get<PageResponse<Student>>(
-      `/v1/student/all?page=${page}&size=${size}`
-    );
+    const response = await api.get("/v1/student/all", {
+      params: {
+        page,
+        size,
+        search,
+        sort,
+      },
+    });
 
     return response.data;
-  }
-  ,
+  },
 
   create: async (user: User): Promise<User> => {
     const response = await api.post("/users/register", user);
