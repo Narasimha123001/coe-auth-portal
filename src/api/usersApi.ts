@@ -1,12 +1,25 @@
-import api from './axios';
+import api from "./axios";
 
 export interface User {
   id?: number;
-  registerNumber: string;
+  registerNumber: number;
   email: string;
   password?: string;
   role: string;
   name?: string;
+}
+export interface Student {
+  registerNo: number;
+  name?: string;
+  email: string;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number; // current page
 }
 
 export interface StudentProfile {
@@ -19,35 +32,41 @@ export interface StudentProfile {
   semester: number;
 }
 
-
-export interface Subject{
-  subjectCode : string;
+export interface Subject {
+  subjectCode: string;
   title: string;
 }
 
-export interface StudentSubjectsResponse{
-
+export interface StudentSubjectsResponse {
   email: string;
   subjects: Subject[];
 }
-export interface StaffRespone{
-  registerNumber : number;
-  name : String ;
+export interface StaffRespone {
+  registerNumber: number;
+  name: String;
 }
 
 export const usersApi = {
-
   getAllStaff: async (): Promise<StaffRespone[]> => {
-    const response = await api.get('/v1/staff');
+    const response = await api.get("/v1/staff");
     return response.data;
   },
-  getAll: async (): Promise<User[]> => {
-    const response = await api.get('/users');
+
+  getAll: async (
+    page: number = 0,
+    size: number = 20
+  ): Promise<PageResponse<Student>> => {
+
+    const response = await api.get<PageResponse<Student>>(
+      `/v1/student/all?page=${page}&size=${size}`
+    );
+
     return response.data;
-  },
+  }
+  ,
 
   create: async (user: User): Promise<User> => {
-    const response = await api.post('/users/register', user);
+    const response = await api.post("/users/register", user);
     return response.data;
   },
 
@@ -61,14 +80,12 @@ export const usersApi = {
   },
 
   getStudentProfile: async (): Promise<StudentProfile> => {
-    const response = await api.get('/v1/student/me');
+    const response = await api.get("/v1/student/me");
     return response.data;
   },
 
-
   getStudentSubjects: async (): Promise<StudentSubjectsResponse> => {
-  const response = await api.get('/v1/student/subjects');
-  return response.data;
-},
-
+    const response = await api.get("/v1/student/subjects");
+    return response.data;
+  },
 };

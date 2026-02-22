@@ -12,7 +12,7 @@ import NotFound from "./pages/NotFound";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
-import UserManagement from "./pages/admin/UserManagement";
+import StudentManagement from "./pages/admin/StudentMangement";
 import RoomAccess from "./pages/admin/RoomAccess";
 import AdminAppointments from "./pages/admin/Appointments";
 import  ExamRooms  from "./pages/admin/ExamRooms";
@@ -81,10 +81,10 @@ const App = () => (
               }
             />
             <Route
-              path="/admin/users"
+              path="/admin/student"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <UserManagement />
+                  <StudentManagement/>
                 </ProtectedRoute>
               }
             />

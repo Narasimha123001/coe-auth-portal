@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { 
   LayoutDashboard, 
-  Users, 
+  GraduationCap , 
   DoorOpen, 
   BookOpen,
   Calendar, 
@@ -35,10 +35,12 @@ const navItems: NavItem[] = [
     icon: Calendar,
     roles: ['admin'],
   },
+  
+  
   {
-    title: 'User Management',
-    href: '/admin/users',
-    icon: Users,
+    title: 'Students Management',
+    href: '/admin/student',
+    icon: GraduationCap ,
     roles: ['admin'],
   },
   {
