@@ -1,6 +1,5 @@
 import { create } from 'domain';
 import api from './axios';
-import { access } from 'fs';
 
 export interface ExamRoom{
   roomNumber: number,
@@ -9,6 +8,15 @@ export interface ExamRoom{
   seatsPerBench: number,
   totalCapacity: number,
   location: string
+}
+
+export interface RoomRequest{
+  roomNumber : number,
+  name: string;
+  benchesTotal: number;
+  seatsPerBench: number;
+  totalCapacity: number;
+  location: string;
 }
 
 export interface Room{
@@ -75,5 +83,30 @@ export const roomsApi = {
   getExamRooms: async (): Promise<ExamRoom[]> =>{
     const response = await api.get('/v1/examrooms');
     return response.data;
-  }
+  },
+
+  createExamRoom: async (
+    data: RoomRequest
+  ):   Promise<ExamRoom> => {
+    const response = await api.post("/v1/examrooms/save" , data);
+    return response.data;
+  },
+
+
+  updateExamRoom: async (
+    roomId: number,
+    data: RoomRequest
+  ): Promise<ExamRoom> => {
+    const response = await api.put(
+      `/v1/examrooms/${roomId}`,
+      data
+    );
+    return response.data;
+  },
+
+  deleteExamRoom: async (
+    roomNumber: number
+  ): Promise<void> => {
+    await api.delete(`/v1/examrooms/${roomNumber}`);
+  },
 };
