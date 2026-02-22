@@ -2,6 +2,14 @@ import { create } from 'domain';
 import api from './axios';
 import { access } from 'fs';
 
+export interface ExamRoom{
+  roomNumber: number,
+  name: string,
+  benchesTotal: number,
+  seatsPerBench: number,
+  totalCapacity: number,
+  location: string
+}
 
 export interface Room{
   blackRoomNumber : number;
@@ -22,9 +30,7 @@ export interface ValidationResult {
   allowed: boolean;
   message: string;
 }
-
-
-
+//-> blackroom Apis
 export const roomsApi = {
   create: async (room: Room): Promise<Room> =>{
     const response = await api.post('/v1/blackRoom/add/room', room);
@@ -62,4 +68,12 @@ export const roomsApi = {
   logEntry: async (staffId: string, roomName: string): Promise<void> => {
     await api.post('/rooms/log-entry', { staffId, roomName });
   },
+
+
+  //examRooms Apis
+
+  getExamRooms: async (): Promise<ExamRoom[]> =>{
+    const response = await api.get('/v1/examrooms');
+    return response.data;
+  }
 };

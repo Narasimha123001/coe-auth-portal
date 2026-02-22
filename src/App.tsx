@@ -15,6 +15,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import RoomAccess from "./pages/admin/RoomAccess";
 import AdminAppointments from "./pages/admin/Appointments";
+import  ExamRooms  from "./pages/admin/ExamRooms";
 
 // Staff pages
 import StaffAppointments from "./pages/staff/MyAppointments";
@@ -105,6 +106,15 @@ const App = () => (
                   <RoomAccess />
                 </ProtectedRoute>
               }
+            />
+
+            <Route
+            path = "/admin/examrooms"
+            element = {
+              <ProtectedRoute allowedRoles={['admin']}>
+                <ExamRooms/>
+              </ProtectedRoute>
+            }
             />
 
             {/* Staff Routes */}

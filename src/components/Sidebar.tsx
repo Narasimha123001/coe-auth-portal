@@ -9,7 +9,8 @@ import {
   CheckCircle, 
   FileText,
   Shield ,
-  User
+  User,
+  DoorClosed
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -41,12 +42,17 @@ const navItems: NavItem[] = [
     roles: ['admin'],
   },
   {
-    title: 'Room Access',
+    title: 'BlackRoom Access',
     href: '/admin/rooms',
-    icon: DoorOpen,
+    icon: DoorClosed,
     roles: ['admin'],
   },
-  
+  {
+    title: "ExamRoom",
+    href : '/admin/examRooms',
+    icon: DoorOpen,
+    roles:['admin'],
+  },
   {
     title: 'Dashboard',
     href: '/staff/dashboard',
