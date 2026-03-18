@@ -16,6 +16,8 @@ import StudentManagement from "./pages/admin/StudentMangement";
 import RoomAccess from "./pages/admin/RoomAccess";
 import AdminAppointments from "./pages/admin/Appointments";
 import  ExamRooms  from "./pages/admin/ExamRooms";
+import Departments from "./pages/admin/Departments";
+import Subjects from "./pages/admin/Subjects";
 
 // Staff pages
 import StaffAppointments from "./pages/staff/MyAppointments";
@@ -80,6 +82,23 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+             <Route
+              path="/admin/Departments"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Departments/>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/Subjects"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Subjects/>
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/admin/student"
               element={
