@@ -1,18 +1,19 @@
-import { NavLink } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { 
-  LayoutDashboard, 
-  GraduationCap , 
-  DoorOpen, 
+import { NavLink } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import {
+  LayoutDashboard,
+  GraduationCap,
+  DoorOpen,
   BookOpen,
-  Calendar, 
-  CheckCircle, 
+  Calendar,
+  CheckCircle,
   FileText,
-  Shield ,
+  Shield,
   User,
-  DoorClosed
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+  DoorClosed,
+  Building2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   title: string;
@@ -23,104 +24,116 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    title: 'Dashboard',
-    href: '/admin/dashboard',
+    title: "Dashboard",
+    href: "/admin/dashboard",
     icon: LayoutDashboard,
-    roles: ['admin'],
+    roles: ["admin"],
   },
 
-    {
-    title: 'Appointments',
-    href: '/admin/appointments',
+  {
+    title: "Appointments",
+    href: "/admin/appointments",
     icon: Calendar,
-    roles: ['admin'],
+    roles: ["admin"],
   },
-  
-  
+
   {
-    title: 'Students Management',
-    href: '/admin/student',
-    icon: GraduationCap ,
-    roles: ['admin'],
+    title: "Students Management",
+    href: "/admin/student",
+    icon: GraduationCap,
+    roles: ["admin"],
   },
   {
-    title: 'BlackRoom Access',
-    href: '/admin/rooms',
+    title: "BlackRoom Access",
+    href: "/admin/rooms",
     icon: DoorClosed,
-    roles: ['admin'],
+    roles: ["admin"],
   },
   {
     title: "ExamRoom",
-    href : '/admin/examRooms',
+    href: "/admin/examRooms",
     icon: DoorOpen,
-    roles:['admin'],
+    roles: ["admin"],
   },
   {
-    title: 'Dashboard',
-    href: '/staff/dashboard',
-    icon: LayoutDashboard,
-    roles: ['staff'],
-  }
-  ,{
-    title: 'My Appointments',
-    href: '/staff/appointments',
-    icon: Calendar,
-    roles: ['staff'],
+    title: "Departments",
+    href: "/admin/departments",
+    icon: Building2,
+    roles: ["admin"],
   },
   {
-    title: 'Access Validation',
-    href: '/staff/validation',
-    icon: CheckCircle,
-    roles: ['staff'],
-  },
-  {
-    title: 'Entry Logs',
-    href: '/staff/logs',
-    icon: FileText,
-    roles: ['staff'],
-  },
-
-  {
-    title: 'Dashboard',
-    href: '/student/dashboard',
-    icon: LayoutDashboard,
-    roles: ['student'],
-  },
-
-  {
-    title: 'Profile',
-    href: '/student/profile',
-    icon: User,
-    roles: ['student'],
-  },
-  
-  {
-    title: 'Book Appointment',
-    href: '/student/book',
-    icon: Calendar,
-    roles: ['student'],
-  },
-
-  {
-    title: 'Subjects',
-    href: '/student/Subject',
+    title: "Subjects",
+    href: "/admin/Subjects",
     icon: BookOpen,
-    roles: ['student'],
+    roles: ["admin"],
   },
 
   {
-    title: 'My Appointments',
-    href: '/student/appointments',
+    title: "Dashboard",
+    href: "/staff/dashboard",
+    icon: LayoutDashboard,
+    roles: ["staff"],
+  },
+  {
+    title: "My Appointments",
+    href: "/staff/appointments",
+    icon: Calendar,
+    roles: ["staff"],
+  },
+  {
+    title: "Access Validation",
+    href: "/staff/validation",
+    icon: CheckCircle,
+    roles: ["staff"],
+  },
+  {
+    title: "Entry Logs",
+    href: "/staff/logs",
     icon: FileText,
-    roles: ['student'],
+    roles: ["staff"],
+  },
+
+  {
+    title: "Dashboard",
+    href: "/student/dashboard",
+    icon: LayoutDashboard,
+    roles: ["student"],
+  },
+
+  {
+    title: "Profile",
+    href: "/student/profile",
+    icon: User,
+    roles: ["student"],
+  },
+
+  {
+    title: "Book Appointment",
+    href: "/student/book",
+    icon: Calendar,
+    roles: ["student"],
+  },
+
+  {
+    title: "Subjects",
+    href: "/student/Subject",
+    icon: BookOpen,
+    roles: ["student"],
+  },
+
+  {
+    title: "My Appointments",
+    href: "/student/appointments",
+    icon: FileText,
+    roles: ["student"],
   },
 ];
 
 const Sidebar = () => {
   const { user } = useAuth();
 
-  const filteredItems = navItems.filter((item) => 
-    user?.role && item.roles.includes(user.role)
+  const filteredItems = navItems.filter(
+    (item) => user?.role && item.roles.includes(user.role),
   );
 
   return (
@@ -145,9 +158,10 @@ const Sidebar = () => {
               to={item.href}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-                  'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent',
-                  isActive && 'bg-sidebar-accent text-sidebar-foreground font-medium'
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                  "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                  isActive &&
+                    "bg-sidebar-accent text-sidebar-foreground font-medium",
                 )
               }
             >
