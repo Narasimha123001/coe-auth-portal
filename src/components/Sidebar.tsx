@@ -67,6 +67,12 @@ const navItems: NavItem[] = [
     icon: BookOpen,
     roles: ["admin"],
   },
+  {
+    title : "Exams",
+    href:"/admin/Exams",
+    icon : FileText,
+    roles:["admin"],
+  },
 
   {
     title: "Dashboard",
