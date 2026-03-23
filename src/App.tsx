@@ -18,6 +18,7 @@ import AdminAppointments from "./pages/admin/Appointments";
 import  ExamRooms  from "./pages/admin/ExamRooms";
 import Departments from "./pages/admin/Departments";
 import Subjects from "./pages/admin/Subjects";
+import Exams from "./pages/admin/Exams";
 
 // Staff pages
 import StaffAppointments from "./pages/staff/MyAppointments";
@@ -95,6 +96,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Subjects/>
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="/admin/Exams"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Exams/>
                 </ProtectedRoute>
               }
             />
