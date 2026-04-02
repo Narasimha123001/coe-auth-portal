@@ -1,4 +1,6 @@
+import { create } from "domain";
 import api from "./axios";
+import ExamSessions from "@/pages/admin/ExamSession";
 
 /* ---------------- TYPES ---------------- */
 
@@ -9,6 +11,33 @@ export interface Exam {
   startDate: string;
   endDate: string;
   createdBy?: string;
+}
+
+export interface createExamSession{
+  examId?: number;
+  sessionId?: number;
+  subjectCode:string;
+  partno?: number;
+  date: string;
+  slotCode: string,
+  year:number,
+  startTime: string;
+  endTime: string;
+  partNo?: number,
+}
+
+export interface ExamSession{
+  examId?: number;
+  sessionId?: number;
+  subject_title:string;
+  subject_code:string;
+  partno?: number;
+  date: string;
+  slotCode: string,
+  year:number,
+  startTime: string;
+  endTime: string;
+  partNo?: number,
 }
 
 /* ---------------- EXAM APIS ---------------- */
@@ -33,3 +62,18 @@ export const examApi = {
     await api.delete(`/v1/exam/${id}`);
   },
 };
+
+  /*--Exam Session --*/
+
+  export const examSessionApi ={
+
+    createExamSession: async (createExamSession: createExamSession): Promise<createExamSession> => {
+      const response = await api.post("/v1/examSessions", createExamSession)
+      return response.data;
+    },
+    getAllExamSession: async(examId: number): Promise<ExamSession[]> =>{
+      const response = await api.get(`/v1/examSessions/examId/${examId}`);
+      return response.data;
+    }
+    
+  };
