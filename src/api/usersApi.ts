@@ -48,6 +48,10 @@ export interface StaffRespone {
   name: String;
 }
 
+export interface studentList{
+  registerNumber: number[];
+}
+
 export const usersApi = {
   getAllStaff: async (): Promise<StaffRespone[]> => {
     const response = await api.get("/v1/staff");

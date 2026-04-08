@@ -75,6 +75,13 @@ const navItems: NavItem[] = [
   },
 
   {
+    title : "Seats",
+    href:"/admin/SeatPage",
+    icon : FileText,
+    roles:["admin"],
+  },
+
+  {
     title: "Dashboard",
     href: "/staff/dashboard",
     icon: LayoutDashboard,

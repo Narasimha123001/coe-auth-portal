@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 
 import { examSessionApi, ExamSession, createExamSession } from "@/api/examApis";
@@ -33,15 +33,28 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, MoreVertical, UserPlus } from "lucide-react";
 import { toast } from "react-hot-toast";
+import SeatPage from "./SeatAssignmentPage";
 
 const ExamSessions = () => {
   const { examId } = useParams();
+  const navigate = useNavigate();
+
+  const [selectedSession, setSelectedSession] = useState<{
+  sessionId: number;
+  date: string;
+  slotCode: string;
+} | null>(null);
 
   const [sessions, setSessions] = useState<ExamSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<number | null>(null);
+  
+  const [allocationMap, setAllocationMap] = useState<Record<string, any>>({});
+  const [allocLoadingKey, setAllocLoadingKey] = useState<string | null>(null);
+
 
   const [form, setForm] = useState<createExamSession>({
     examId: Number(examId),
@@ -60,9 +73,7 @@ const ExamSessions = () => {
     S3: { start: "13:00", end: "14:30" },
     S4: { start: "15:00", end: "16:30" },
   };
-
   /* ---------------- FETCH ---------------- */
-
   useEffect(() => {
     fetchSessions();
   }, []);
@@ -79,25 +90,41 @@ const ExamSessions = () => {
   };
 
   /* ---------------- GROUP LOGIC ---------------- */
-
   const groupedSessions = useMemo(() => {
     const map: Record<string, ExamSession[]> = {};
 
     sessions.forEach((s) => {
       const key = `${s.date}_${s.startTime}_${s.endTime}_${s.slotCode}`;
-
-      if (!map[key]) {
-        map[key] = [];
-      }
-
+      if (!map[key]) map[key] = [];
       map[key].push(s);
     });
 
     return map;
   }, [sessions]);
 
-  /* ---------------- CREATE ---------------- */
+  /*----------AlloxTION--------*/
 
+   const handleAllocation = async (slotCode: string, date: string) => {
+    const key = `${slotCode}_${date}`;
+
+    try {
+      setAllocLoadingKey(key);
+
+      const res = await examSessionApi.generateAllocation(slotCode, date);
+
+      setAllocationMap((prev) => ({
+        ...prev,
+        [key]: res,
+      }));
+
+      toast.success("Allocation completed");
+    } catch (err: any) {
+      toast.error("Allocation failed");
+    } finally {
+      setAllocLoadingKey(null);
+    }
+  };
+  /* ---------------- CREATE ---------------- */
   const handleCreate = async () => {
     if (!form.date || !form.slotCode) {
       toast.error("Fill required fields");
@@ -129,10 +156,10 @@ const ExamSessions = () => {
   };
 
   /* ---------------- UI ---------------- */
-
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
+        {/* HEADER */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">
             Exam Sessions (Exam ID: {examId})
@@ -144,6 +171,7 @@ const ExamSessions = () => {
           </Button>
         </div>
 
+        {/* LOADING */}
         {loading ? (
           <div className="flex justify-center py-10">
             <Loader2 className="animate-spin" />
@@ -153,26 +181,43 @@ const ExamSessions = () => {
         ) : (
           Object.entries(groupedSessions).map(([key, group]) => {
             const [date, start, end, slotCode] = key.split("_");
+            const allocation = allocationMap[`${slotCode}_${date}`];
 
             return (
               <Card key={key} className="p-6">
-                {/* 🔥 HEADER BOX (WHAT YOU WANTED) */}
+                {/* HEADER BOX */}
                 <div className="mb-4 p-4 bg-gray-100 rounded-lg flex justify-between items-center">
-                  <div>
-                    <h2 className="text-lg font-semibold">Exam Date: {date}</h2>
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold">Slot: {slotCode}</h2>
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold">
-                      Timings: {start} - {end}
-                    </h2>
-                  </div>
-
-                  <div className="text-sm text-gray-500">
+                  <h2 className="font-semibold"> Date: {date}</h2>
+                  <h2 className="font-semibold">Slot: {slotCode}</h2>
+                  <h2 className="font-semibold">
+                    Timings: {start} - {end}
+                  </h2>
+                  <span className="text-sm text-gray-500">
                     Total Subjects: {group.length}
-                  </div>
+                  </span>
+                  
+             <button
+  className="px-3 py-1 bg-green-600 text-white rounded-lg"
+  onClick={() =>
+    setSelectedSession({
+      sessionId: group[0].sessionId,
+      date,
+      slotCode,
+    })
+  }
+>
+  View
+</button>
+
+                  <button
+                    className="gap-2 px-3 py-1 bg-blue-600 text-white rounded-lg"
+                    onClick={() => handleAllocation(slotCode, date)}
+                    disabled={allocLoadingKey === `${slotCode}_${date}`}
+                  >
+                    {allocLoadingKey === `${slotCode}_${date}`
+                      ? "Allocating..."
+                      : "Allocation"}
+                  </button>
                 </div>
 
                 {/* TABLE */}
@@ -181,32 +226,100 @@ const ExamSessions = () => {
                     <TableRow>
                       <TableHead>Session Id</TableHead>
                       <TableHead>Subject</TableHead>
+                      <TableHead>Capacity</TableHead>
                       <TableHead>Code</TableHead>
                       <TableHead>Year</TableHead>
+                      <TableHead>DeptId</TableHead>
                       <TableHead>Part</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
 
                   <TableBody>
                     {group.map((s, i) => (
                       <TableRow key={i}>
-                        <TableCell  >{s.sessionId}</TableCell>
+                        <TableCell>{s.sessionId}</TableCell>
                         <TableCell>{s.subject_title}</TableCell>
+                        <TableCell>{s.capacityRequired}</TableCell>
                         <TableCell>{s.subject_code}</TableCell>
                         <TableCell>{s.year || "-"}</TableCell>
+                        <TableCell>{s.deptId}</TableCell>
                         <TableCell>{s.partNo || "-"}</TableCell>
+
+                        {/* 🔥 ACTION MENU */}
+                        <TableCell className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenu(
+                                activeMenu === s.sessionId ? null : s.sessionId,
+                              );
+                            }}
+                            className="p-2 rounded-full hover:bg-gray-100 transition"
+                          >
+                            <MoreVertical size={18} />
+                          </button>
+
+                          {activeMenu === s.sessionId && (
+                            <div
+                              className="absolute right-6 top-10 w-40 bg-white border rounded-xl shadow-xl z-50"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-blue-50 hover:text-blue-600 transition rounded-t-xl"
+                                onClick={() => {
+                                  navigate(
+                                    `/admin/sessions/${s.sessionId}/assign?year=${s.year}&deptId=${s.deptId}`,
+                                  );
+                                  setActiveMenu(null);
+                                }}
+                              >
+                                {/* <UserPlus size={14} /> */}
+                                Assign
+                              </button>
+
+                              <button className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 transition rounded-b-xl">
+                                View
+                              </button>
+                            </div>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+
+
+                {/* 🔥 ALLOCATION RESULT */}
+                {allocation && (
+                  <div className="mt-4 p-4 bg-green-50 rounded">
+
+                    <h3 className="font-bold mb-2">Allocation</h3>
+
+                    <p>Total Students: {allocation.assignedTotal}</p>
+                    <p>Total Seats: {allocation.seatsTotal}</p>
+                    <p>Utilization: {allocation.allocationMetrics.utilizationPercent}%</p>
+
+                    <div className="mt-2">
+                      {Object.entries(allocation.perSessionAssigned).map(([id, count]) => (
+                        <span key={id} className="mr-2">
+                          S{id}: 
+                        </span>
+                      ))}
+                    </div>
+
+                  </div>
+                )}
+                
               </Card>
             );
           })
         )}
       </div>
 
-      {/* ---------------- DIALOG ---------------- */}
+      {/*show result */}
 
+      {/* ---------------- DIALOG ---------------- */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
@@ -215,6 +328,7 @@ const ExamSessions = () => {
 
           <div className="space-y-4">
             <Input type="number" value={examId} disabled />
+
             <Input
               placeholder="Subject Code"
               value={form.subjectCode}
@@ -228,9 +342,10 @@ const ExamSessions = () => {
               value={form.date}
               onChange={(e) => setForm({ ...form, date: e.target.value })}
             />
+
             <Input
               type="number"
-              placeholder="Part No (e.g., 1, 2)"
+              placeholder="Part No"
               value={form.partNo ?? ""}
               onChange={(e) =>
                 setForm({
@@ -241,7 +356,7 @@ const ExamSessions = () => {
               }
             />
 
-            {/* ✅ SLOT DROPDOWN */}
+            {/* SLOT */}
             <Select
               value={form.slotCode}
               onValueChange={(value) => {

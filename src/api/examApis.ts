@@ -1,4 +1,4 @@
-import { create } from "domain";
+// import { create } from "domain";
 import api from "./axios";
 import ExamSessions from "@/pages/admin/ExamSession";
 
@@ -31,8 +31,10 @@ export interface ExamSession{
   sessionId?: number;
   subject_title:string;
   subject_code:string;
+  capacityRequired:number,
   partno?: number;
   date: string;
+  deptId:number;
   slotCode: string,
   year:number,
   startTime: string;
@@ -74,6 +76,18 @@ export const examApi = {
     getAllExamSession: async(examId: number): Promise<ExamSession[]> =>{
       const response = await api.get(`/v1/examSessions/examId/${examId}`);
       return response.data;
+    },
+
+
+
+    //allocation 
+
+    generateAllocation: async (slotCode : string , date: string) =>{
+      const res = await api.post(
+        `/v1/admin/generate?slotCode=${slotCode}&date=${date}`
+      );
+
+      return res.data;
     }
     
   };

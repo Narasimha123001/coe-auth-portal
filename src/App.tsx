@@ -15,11 +15,13 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import StudentManagement from "./pages/admin/StudentMangement";
 import RoomAccess from "./pages/admin/RoomAccess";
 import AdminAppointments from "./pages/admin/Appointments";
-import  ExamRooms  from "./pages/admin/ExamRooms";
+import ExamRooms from "./pages/admin/ExamRooms";
 import Departments from "./pages/admin/Departments";
 import Subjects from "./pages/admin/Subjects";
 import Exams from "./pages/admin/Exams";
 import ExamSessions from "./pages/admin/ExamSession";
+import AssignStudents from "./pages/admin/AssignStudents";
+import SeatPage from "./pages/admin/SeatAssignmentPage";
 
 // Staff pages
 import StaffAppointments from "./pages/staff/MyAppointments";
@@ -29,8 +31,8 @@ import EntryLogs from "./pages/staff/EntryLogs";
 // Student pages
 import BookAppointment from "./pages/student/BookAppointment";
 import StudentAppointments from "./pages/student/StudentAppointments";
-import  StudentProfile from "./pages/student/Profile";
-import StudentSubjectPage from "./pages/student/Subject"
+import StudentProfile from "./pages/student/Profile";
+import StudentSubjectPage from "./pages/student/Subject";
 
 // Dashboard pages
 import StudentDashboard from "./pages/student/Dashboard";
@@ -43,13 +45,13 @@ const RootRedirect = () => {
   if (isLoading) return null;
   if (!user) return <Navigate to="/login" replace />;
   const dashboardMap: Record<string, string> = {
-    admin: '/admin/dashboard',
-    staff: '/staff/appointments',
-    student: '/student/dashboard',
+    admin: "/admin/dashboard",
+    staff: "/staff/appointments",
+    student: "/student/dashboard",
   };
-  return <Navigate to={dashboardMap[user.role] || '/login'} replace />;
+  return <Navigate to={dashboardMap[user.role] || "/login"} replace />;
 
-  return <Navigate to={dashboardMap[user.role] || '/login'} replace />;
+  return <Navigate to={dashboardMap[user.role] || "/login"} replace />;
 };
 
 const App = () => (
@@ -58,61 +60,71 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <HotToaster 
+        <HotToaster
           position="top-right"
           toastOptions={{
             duration: 3000,
             style: {
-              background: 'hsl(var(--card))',
-              color: 'hsl(var(--card-foreground))',
-              border: '1px solid hsl(var(--border))',
+              background: "hsl(var(--card))",
+              color: "hsl(var(--card-foreground))",
+              border: "1px solid hsl(var(--border))",
             },
           }}
         />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BrowserRouter
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <Routes>
             <Route path="/" element={<RootRedirect />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            
+
             {/* Admin Routes */}
             <Route
               path="/admin/dashboard"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={["admin"]}>
                   <AdminDashboard />
                 </ProtectedRoute>
               }
             />
-             <Route
+            <Route
               path="/admin/Departments"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <Departments/>
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <Departments />
                 </ProtectedRoute>
               }
             />
             <Route
               path="/admin/Subjects"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <Subjects/>
-                </ProtectedRoute>
-              }
-            />
-             <Route
-              path="/admin/Exams"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <Exams/>
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <Subjects />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/admin/exams/:examId/sessions" 
+              path="/admin/Exams"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <ExamSessions/>
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <Exams />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/sessions/:sessionId/assign"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AssignStudents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/exams/:examId/sessions"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <ExamSessions />
                 </ProtectedRoute>
               }
             />
@@ -120,45 +132,51 @@ const App = () => (
             <Route
               path="/admin/student"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <StudentManagement/>
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <StudentManagement />
                 </ProtectedRoute>
               }
             />
 
             <Route
-            path="/admin/appointments"
-            element = {
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminAppointments/>
-              </ProtectedRoute>
-            }
-            
-            
+              path="/admin/appointments"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminAppointments />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/admin/rooms"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={["admin"]}>
                   <RoomAccess />
                 </ProtectedRoute>
               }
             />
 
             <Route
-            path = "/admin/examrooms"
-            element = {
-              <ProtectedRoute allowedRoles={['admin']}>
-                <ExamRooms/>
-              </ProtectedRoute>
-            }
+              path="/admin/examrooms"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <ExamRooms />
+                </ProtectedRoute>
+              }
             />
 
+            <Route
+              path="/admin/SeatPage"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <SeatPage />
+                </ProtectedRoute>
+              }
+            />
             {/* Staff Routes */}
             <Route
               path="/staff/appointments"
               element={
-                <ProtectedRoute allowedRoles={['staff']}>
+                <ProtectedRoute allowedRoles={["staff"]}>
                   <StaffAppointments />
                 </ProtectedRoute>
               }
@@ -166,7 +184,7 @@ const App = () => (
             <Route
               path="/staff/validation"
               element={
-                <ProtectedRoute allowedRoles={['staff']}>
+                <ProtectedRoute allowedRoles={["staff"]}>
                   <AccessValidation />
                 </ProtectedRoute>
               }
@@ -174,33 +192,33 @@ const App = () => (
             <Route
               path="/staff/logs"
               element={
-                <ProtectedRoute allowedRoles={['staff']}>
+                <ProtectedRoute allowedRoles={["staff"]}>
                   <EntryLogs />
                 </ProtectedRoute>
               }
             />
 
             {/* Student Routes */}
-                        <Route
-                          path="/student/dashboard"
-                          element={
-                            <ProtectedRoute allowedRoles={["student"]}>
-                              <StudentDashboard />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/staff/dashboard"
-                          element={
-                            <ProtectedRoute allowedRoles={["staff"]}>
-                              <StaffDashboard />
-                            </ProtectedRoute>
-                          }
-                        />
+            <Route
+              path="/student/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["student"]}>
+                  <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/staff/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["staff"]}>
+                  <StaffDashboard />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/student/book"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={["student"]}>
                   <BookAppointment />
                 </ProtectedRoute>
               }
@@ -208,7 +226,7 @@ const App = () => (
             <Route
               path="/student/appointments"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={["student"]}>
                   <StudentAppointments />
                 </ProtectedRoute>
               }
@@ -216,7 +234,7 @@ const App = () => (
             <Route
               path="/student/profile"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={["student"]}>
                   <StudentProfile />
                 </ProtectedRoute>
               }
@@ -225,7 +243,7 @@ const App = () => (
             <Route
               path="/student/Subject"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={["student"]}>
                   <StudentSubjectPage />
                 </ProtectedRoute>
               }
