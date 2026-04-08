@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import RoomViewModal from "@/components/RoomViewModal";
 import DashboardLayout from "@/components/DashboardLayout";
 
 import { examSessionApi, ExamSession, createExamSession } from "@/api/examApis";
@@ -33,27 +34,28 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-import { Loader2, Plus, MoreVertical, UserPlus } from "lucide-react";
+import { Loader2, Plus, MoreVertical } from "lucide-react";
 import { toast } from "react-hot-toast";
-import SeatPage from "./SeatAssignmentPage";
 
 const ExamSessions = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
 
-  const [selectedSession, setSelectedSession] = useState<{
-  sessionId: number;
-  date: string;
-  slotCode: string;
-} | null>(null);
 
   const [sessions, setSessions] = useState<ExamSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
-  
+
   const [allocationMap, setAllocationMap] = useState<Record<string, any>>({});
   const [allocLoadingKey, setAllocLoadingKey] = useState<string | null>(null);
+
+  // Room View Modal
+  const [viewModal, setViewModal] = useState<{
+    open: boolean;
+    date: string;
+    slotCode: string;
+  }>({ open: false, date: "", slotCode: "" });
 
 
   const [form, setForm] = useState<createExamSession>({
@@ -197,13 +199,9 @@ const ExamSessions = () => {
                   </span>
                   
              <button
-  className="px-3 py-1 bg-green-600 text-white rounded-lg"
+  className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
   onClick={() =>
-    setSelectedSession({
-      sessionId: group[0].sessionId,
-      date,
-      slotCode,
-    })
+    setViewModal({ open: true, date, slotCode })
   }
 >
   View
@@ -391,6 +389,14 @@ const ExamSessions = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Room View Modal ── */}
+      <RoomViewModal
+        open={viewModal.open}
+        onOpenChange={(v) => setViewModal((prev) => ({ ...prev, open: v }))}
+        date={viewModal.date}
+        slotCode={viewModal.slotCode}
+      />
     </DashboardLayout>
   );
 };

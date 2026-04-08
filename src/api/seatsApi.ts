@@ -1,30 +1,37 @@
 import api from "./axios";
 
-/** ================= SEAT APIs ================= */
+/** ================= TYPES ================= */
 
-export interface SeatRoomResponse {
-  rooms: number[];
+export interface RoomsResponse {
+  roomId: number[];
   date: string;
-  sessionId: number | null;
+  sessionId: number[];
 }
 
+/** ================= SEAT APIs ================= */
+
 export const seatApi = {
-
-  /** ✅ Get rooms using date + slot */
-  getRoomsByDateAndSlot: (date: string, slotCode: string) =>
-    api.get<SeatRoomResponse>(`/v1/seats/rooms`, {
+  /** Get rooms using date + slot */
+  getRoomsByDateAndSlot: async (date: string, slotCode: string): Promise<RoomsResponse> => {
+    const res = await api.get<RoomsResponse>(`/v1/seats/rooms`, {
       params: { date, slotCode },
-    }),
+    });
+    return res.data;
+  },
 
-  /** ✅ Get seats using room + session */
-  getSeatsByRoom: (roomId: number, sessionId: number) =>
-    api.get<number[]>(`/v1/seats/seats`, {
+  /** Get seats using room + session */
+  getSeatsByRoom: async (roomId: number, sessionId: number): Promise<number[]> => {
+    const res = await api.get<number[]>(`/v1/seats/seats`, {
       params: { roomId, sessionId },
-    }),
+    });
+    return res.data;
+  },
 
-  /** ✅ Get student using seat + session */
-  getStudentBySeat: (seatId: number, sessionId: number) =>
-    api.get<number>(`/v1/seats/student`, {
+  /** Get student register number using seat + session */
+  getStudentBySeat: async (seatId: number, sessionId: number): Promise<number> => {
+    const res = await api.get<number>(`/v1/seats/student`, {
       params: { seatId, sessionId },
-    }),
+    });
+    return res.data;
+  },
 };
