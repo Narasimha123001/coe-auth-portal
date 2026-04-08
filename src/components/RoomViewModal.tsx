@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { seatApi, RoomsResponse } from "@/api/seatsApi";
+import { seatApi, RoomsResponse, SeatEntry, SeatStatus } from "@/api/seatsApi";
 import {
   Dialog,
   DialogContent,
@@ -18,53 +18,64 @@ interface RoomViewModalProps {
   slotCode: string;
 }
 
-interface SessionSeats {
+interface SessionSeatData {
   sessionId: number;
-  seatIds: number[];
+  seats: SeatEntry[];
 }
 
-/** A single seat position in the room grid — either occupied or empty */
+/** A single seat position in the room grid */
 interface SeatSlot {
-  positionId: number; // the sequential seat-position ID (minSeatId … maxSeatId)
-  seatId: number | null; // actual seat ID (same as positionId when occupied)
-  sessionId: number | null; // which session occupies this seat
+  positionId: number;
+  seatId: number | null;
+  sessionId: number | null;
+  status: SeatStatus | null;
   occupied: boolean;
 }
 
-/* ────────────── Palette per session ────────────── */
+/* ────────────── Status-based colors ────────────── */
 
-const SESSION_PALETTES: Record<
-  number,
-  { bg: string; border: string; text: string; badge: string; glow: string; ring: string }
-> = {
-  0: {
-    bg: "from-blue-500/12 to-blue-600/6",
-    border: "border-blue-400/40",
-    text: "text-blue-700",
-    badge: "bg-blue-500",
-    glow: "shadow-blue-500/25",
-    ring: "ring-blue-400/50",
+const STATUS_STYLES: Record<SeatStatus, {
+  bg: string; border: string; text: string; badge: string; glow: string; ring: string; label: string;
+}> = {
+  ASSIGNED: {
+    bg: "from-amber-400/20 to-yellow-500/10",
+    border: "border-amber-400/50",
+    text: "text-amber-800",
+    badge: "bg-amber-500",
+    glow: "shadow-amber-400/25",
+    ring: "ring-amber-400/50",
+    label: "Assigned",
   },
-  1: {
-    bg: "from-emerald-500/12 to-emerald-600/6",
-    border: "border-emerald-400/40",
-    text: "text-emerald-700",
+  PRESENT: {
+    bg: "from-emerald-400/20 to-green-500/10",
+    border: "border-emerald-400/50",
+    text: "text-emerald-800",
     badge: "bg-emerald-500",
-    glow: "shadow-emerald-500/25",
+    glow: "shadow-emerald-400/25",
     ring: "ring-emerald-400/50",
+    label: "Present",
   },
-  2: {
-    bg: "from-violet-500/12 to-violet-600/6",
-    border: "border-violet-400/40",
-    text: "text-violet-700",
-    badge: "bg-violet-500",
-    glow: "shadow-violet-500/25",
-    ring: "ring-violet-400/50",
+  ABSENT: {
+    bg: "from-red-400/20 to-rose-500/10",
+    border: "border-red-400/50",
+    text: "text-red-800",
+    badge: "bg-red-500",
+    glow: "shadow-red-400/25",
+    ring: "ring-red-400/50",
+    label: "Absent",
   },
 };
 
-function getSessionColor(index: number) {
-  return SESSION_PALETTES[index % 3] ?? SESSION_PALETTES[0];
+/* ────────────── Session badge colors ────────────── */
+
+const SESSION_BADGE_COLORS: Record<number, string> = {
+  0: "bg-blue-500",
+  1: "bg-indigo-500",
+  2: "bg-purple-500",
+};
+
+function getSessionBadge(index: number) {
+  return SESSION_BADGE_COLORS[index % 3] ?? SESSION_BADGE_COLORS[0];
 }
 
 /* ═══════════════════════════════════════════════════════════ */
@@ -81,7 +92,7 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [roomsData, setRoomsData] = useState<RoomsResponse | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
-  const [sessionSeats, setSessionSeats] = useState<SessionSeats[]>([]);
+  const [sessionSeatData, setSessionSeatData] = useState<SessionSeatData[]>([]);
   const [seatsLoading, setSeatsLoading] = useState(false);
 
   /* ── Tooltip state ── */
@@ -110,7 +121,7 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
     if (!open) return;
     setLoading(true);
     setSelectedRoom(null);
-    setSessionSeats([]);
+    setSessionSeatData([]);
     setRoomsData(null);
     studentCache.current = {};
 
@@ -127,17 +138,17 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
       if (!roomsData) return;
       setSelectedRoom(roomId);
       setSeatsLoading(true);
-      setSessionSeats([]);
+      setSessionSeatData([]);
       setActiveTooltip(null);
 
       try {
         const results = await Promise.all(
           roomsData.sessionId.map(async (sid) => {
-            const seatIds = await seatApi.getSeatsByRoom(roomId, sid);
-            return { sessionId: sid, seatIds } as SessionSeats;
+            const seats = await seatApi.getSeatsByRoom(roomId, sid);
+            return { sessionId: sid, seats } as SessionSeatData;
           }),
         );
-        setSessionSeats(results);
+        setSessionSeatData(results);
       } catch (err) {
         console.error(err);
       } finally {
@@ -147,59 +158,62 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
     [roomsData],
   );
 
-  /* ────────────────────────────────────────────────────
-   *  Build the ROOM GRID:
-   *    1. Combine all seat IDs from all sessions
-   *    2. Find range [min … max]  →  54 total positions
-   *    3. For each position, mark occupied / empty
-   *    4. Group into benches of 3
-   *    5. Arrange benches into 3 columns
-   * ──────────────────────────────────────────────────── */
+  /* ─────────────────────────────────────────────────
+   *  Build the ROOM GRID with status
+   * ───────────────────────────────────────────────── */
   const roomGrid = useMemo(() => {
-    if (sessionSeats.length === 0) return { slots: [] as SeatSlot[], benches: [] as SeatSlot[][], columns: [[], [], []] as SeatSlot[][][] };
+    const empty = { slots: [] as SeatSlot[], benches: [] as SeatSlot[][], columns: [[], [], []] as SeatSlot[][][] };
+    if (sessionSeatData.length === 0) return empty;
 
-    // Build a lookup: seatId → sessionId
-    const seatToSession: Record<number, number> = {};
-    for (const ss of sessionSeats) {
-      for (const sid of ss.seatIds) {
-        seatToSession[sid] = ss.sessionId;
+    // Build lookup: seatId → { sessionId, status }
+    const seatLookup: Record<number, { sessionId: number; status: SeatStatus }> = {};
+    for (const ssd of sessionSeatData) {
+      for (const entry of ssd.seats) {
+        seatLookup[entry.seatId] = { sessionId: ssd.sessionId, status: entry.status };
       }
     }
 
-    // Determine the full range of seat positions
-    const allIds = Object.keys(seatToSession).map(Number);
-    if (allIds.length === 0) return { slots: [], benches: [], columns: [[], [], []] as SeatSlot[][][] };
+    const allIds = Object.keys(seatLookup).map(Number);
+    if (allIds.length === 0) return empty;
     const minId = Math.min(...allIds);
     const maxId = Math.max(...allIds);
     const totalPositions = maxId - minId + 1;
 
-    // Build every slot
     const slots: SeatSlot[] = [];
     for (let i = 0; i < totalPositions; i++) {
       const posId = minId + i;
-      const sessId = seatToSession[posId] ?? null;
+      const info = seatLookup[posId] ?? null;
       slots.push({
         positionId: posId,
-        seatId: sessId !== null ? posId : null,
-        sessionId: sessId,
-        occupied: sessId !== null,
+        seatId: info ? posId : null,
+        sessionId: info?.sessionId ?? null,
+        status: info?.status ?? null,
+        occupied: !!info,
       });
     }
 
-    // Group into benches of 3
     const benches: SeatSlot[][] = [];
     for (let i = 0; i < slots.length; i += 3) {
       benches.push(slots.slice(i, i + 3));
     }
 
-    // Distribute benches into 3 columns (round-robin)
     const columns: SeatSlot[][][] = [[], [], []];
     benches.forEach((bench, i) => {
       columns[i % 3].push(bench);
     });
 
     return { slots, benches, columns };
-  }, [sessionSeats]);
+  }, [sessionSeatData]);
+
+  /* ── Status counts ── */
+  const statusCounts = useMemo(() => {
+    const counts = { ASSIGNED: 0, PRESENT: 0, ABSENT: 0, empty: 0 };
+    for (const s of roomGrid.slots) {
+      if (!s.occupied) counts.empty++;
+      else if (s.status) counts[s.status]++;
+    }
+    return counts;
+  }, [roomGrid]);
 
   /* ───────────── Student fetch (hover / click) ───────────── */
   const fetchStudent = useCallback(
@@ -209,9 +223,7 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
         setActiveTooltip({ seatId, sessionId, regNo: studentCache.current[key], loading: false, x, y });
         return;
       }
-
       setActiveTooltip({ seatId, sessionId, regNo: null, loading: true, x, y });
-
       try {
         const regNo = await seatApi.getStudentBySeat(seatId, sessionId);
         studentCache.current[key] = regNo;
@@ -229,19 +241,16 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
     [],
   );
 
-  const getRelativePos = useCallback(
-    (e: React.MouseEvent) => {
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      const container = scrollRef.current;
-      const containerRect = container?.getBoundingClientRect();
-      const scrollTop = container?.scrollTop ?? 0;
-      return {
-        x: rect.left - (containerRect?.left ?? 0) + rect.width / 2,
-        y: rect.top - (containerRect?.top ?? 0) + scrollTop - 10,
-      };
-    },
-    [],
-  );
+  const getRelativePos = useCallback((e: React.MouseEvent) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const container = scrollRef.current;
+    const containerRect = container?.getBoundingClientRect();
+    const scrollTop = container?.scrollTop ?? 0;
+    return {
+      x: rect.left - (containerRect?.left ?? 0) + rect.width / 2,
+      y: rect.top - (containerRect?.top ?? 0) + scrollTop - 10,
+    };
+  }, []);
 
   const handleSeatEnter = useCallback(
     (seatId: number, sessionId: number, e: React.MouseEvent) => {
@@ -267,7 +276,7 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
 
   /* ═══════════════  RENDER  ════════════════ */
 
-  const occupiedTotal = sessionSeats.reduce((a, b) => a + b.seatIds.length, 0);
+  const occupiedTotal = roomGrid.slots.filter((s) => s.occupied).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -283,7 +292,7 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
                 <button
                   onClick={() => {
                     setSelectedRoom(null);
-                    setSessionSeats([]);
+                    setSessionSeatData([]);
                     setActiveTooltip(null);
                   }}
                   className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition-all duration-200 hover:scale-105 active:scale-95"
@@ -297,43 +306,46 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
                 </DialogTitle>
                 <DialogDescription className="text-sm text-slate-500 mt-0.5">
                   {selectedRoom
-                    ? `${sessionSeats.length} sessions · Hover or click a seat to reveal the student register number`
+                    ? `Hover or click a seat to reveal the student register number`
                     : `${date} · Slot ${slotCode} · ${sortedRoomIds.length} rooms`}
                 </DialogDescription>
               </div>
             </div>
 
-            {/* Session legend */}
-            {selectedRoom && sessionSeats.length > 0 && (
-              <div className="flex gap-3 mt-3 flex-wrap">
-                {sessionSeats.map((ss, idx) => {
-                  const c = getSessionColor(idx);
+            {/* Legend */}
+            {selectedRoom && sessionSeatData.length > 0 && (
+              <div className="flex gap-2 mt-3 flex-wrap">
+                {/* Status legend */}
+                {(["ASSIGNED", "PRESENT", "ABSENT"] as SeatStatus[]).map((st) => {
+                  const s = STATUS_STYLES[st];
                   return (
-                    <div
-                      key={ss.sessionId}
-                      className="flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 shadow-sm text-xs font-medium"
-                    >
-                      <span className={`h-2.5 w-2.5 rounded-full ${c.badge}`} />
-                      Session {ss.sessionId}
-                      <span className="text-slate-400">· {ss.seatIds.length} seats</span>
+                    <div key={st} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 shadow-sm text-xs font-medium">
+                      <span className={`h-2.5 w-2.5 rounded-full ${s.badge}`} />
+                      {s.label}
+                      <span className="text-slate-400 ml-0.5">{statusCounts[st]}</span>
                     </div>
                   );
                 })}
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-dashed border-slate-300 text-xs font-medium text-slate-400">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-dashed border-slate-300 text-xs font-medium text-slate-400">
                   <span className="h-2.5 w-2.5 rounded-full bg-slate-200 border border-dashed border-slate-300" />
-                  Empty
+                  Empty <span className="ml-0.5">{statusCounts.empty}</span>
                 </div>
+                {/* Session badges */}
+                <div className="w-px bg-slate-200 mx-1" />
+                {sessionSeatData.map((ssd, idx) => (
+                  <div key={ssd.sessionId} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 shadow-sm text-xs font-medium">
+                    <span className={`h-2.5 w-2.5 rounded-full ${getSessionBadge(idx)}`} />
+                    S{ssd.sessionId}
+                    <span className="text-slate-400">· {ssd.seats.length}</span>
+                  </div>
+                ))}
               </div>
             )}
           </DialogHeader>
         </div>
 
         {/* ─── Body ─── */}
-        <div
-          ref={scrollRef}
-          className="overflow-y-auto px-6 pb-8 pt-2 relative"
-          style={{ maxHeight: "calc(92vh - 130px)" }}
-        >
+        <div ref={scrollRef} className="overflow-y-auto px-6 pb-8 pt-2 relative" style={{ maxHeight: "calc(92vh - 130px)" }}>
           {/* ═══ LOADING ═══ */}
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -353,19 +365,12 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
                   key={rid}
                   onClick={() => handleRoomClick(rid)}
                   className="group relative flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-400/60 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1 active:scale-95"
-                  style={{
-                    animationDelay: `${i * 25}ms`,
-                    animation: "rv-fadeInUp 0.4s ease-out forwards",
-                    opacity: 0,
-                  }}
+                  style={{ animationDelay: `${i * 25}ms`, animation: "rv-fadeInUp 0.4s ease-out forwards", opacity: 0 }}
                 >
                   <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 group-hover:from-blue-100 group-hover:to-indigo-200 transition-all duration-300">
                     <DoorOpen className="h-5 w-5 text-blue-600" />
                   </div>
-                  <span className="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">
-                    Room {rid}
-                  </span>
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-400/0 to-indigo-400/0 group-hover:from-blue-400/5 group-hover:to-indigo-400/5 transition-all duration-300 pointer-events-none" />
+                  <span className="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">Room {rid}</span>
                 </button>
               ))}
             </div>
@@ -382,10 +387,10 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
             </div>
           )}
 
-          {/* ═══ ROOM  DETAIL ═══ */}
-          {selectedRoom && !seatsLoading && sessionSeats.length > 0 && (
+          {/* ═══ ROOM DETAIL ═══ */}
+          {selectedRoom && !seatsLoading && sessionSeatData.length > 0 && (
             <>
-              {/* ─── Floating tooltip ─── */}
+              {/* Floating tooltip */}
               {activeTooltip && (
                 <div
                   className="absolute z-50 pointer-events-none"
@@ -417,14 +422,11 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
                 </div>
               )}
 
-              {/* ─── Room Container ─── */}
+              {/* Room Container */}
               <div className="relative bg-gradient-to-b from-slate-100/80 to-slate-50 rounded-3xl border-2 border-slate-300/50 p-6 pt-8 pb-10 shadow-inner">
-                {/* Room label */}
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1 rounded-full bg-gradient-to-r from-slate-700 to-slate-800 text-white text-xs font-bold shadow-lg tracking-wider uppercase">
                   Classroom {selectedRoom}
                 </div>
-
-                {/* Door indicator */}
                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold shadow-lg uppercase tracking-wider">
                   <DoorOpen className="h-3 w-3" />
                   Entrance
@@ -432,64 +434,48 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
 
                 {/* Blackboard */}
                 <div className="w-full h-10 rounded-xl bg-gradient-to-r from-green-800 via-green-700 to-green-800 mb-6 flex items-center justify-center shadow-lg border border-green-900/30">
-                  <span className="text-white/70 text-xs font-medium tracking-[0.3em] uppercase">
-                    Blackboard
-                  </span>
+                  <span className="text-white/70 text-xs font-medium tracking-[0.3em] uppercase">Blackboard</span>
                 </div>
 
-                {/* ── 3-Column Bench Grid ── */}
+                {/* 3-Column Bench Grid */}
                 <div className="grid grid-cols-3 gap-5">
                   {roomGrid.columns.map((column, colIdx) => (
                     <div key={colIdx} className="flex flex-col gap-2.5">
-                      {/* Column header */}
                       <div className="text-center text-[10px] font-semibold text-slate-400 uppercase tracking-widest pb-1 border-b border-dashed border-slate-200">
                         Column {colIdx + 1}
                       </div>
-
                       {column.map((bench, benchIdx) => (
                         <div
                           key={benchIdx}
                           className="flex items-stretch gap-1.5"
-                          style={{
-                            animationDelay: `${(colIdx * column.length + benchIdx) * 30}ms`,
-                            animation: "rv-fadeInUp 0.35s ease-out forwards",
-                            opacity: 0,
-                          }}
+                          style={{ animationDelay: `${(colIdx * column.length + benchIdx) * 30}ms`, animation: "rv-fadeInUp 0.35s ease-out forwards", opacity: 0 }}
                         >
-                          {/* ── Row label ── */}
+                          {/* Row label */}
                           <div className="flex items-center justify-center flex-shrink-0 w-7">
                             <span className="text-[9px] font-bold text-slate-400/70 uppercase tracking-tight">R{benchIdx + 1}</span>
                           </div>
 
-                          {/* Bench body */}
-                          <div className="flex-1 relative bg-gradient-to-b from-amber-100/90 to-amber-200/60 rounded-xl border border-amber-300/40 shadow-sm overflow-hidden">
-                            {/* Wood grain */}
-                            <div className="absolute inset-0 opacity-[0.06] pointer-events-none">
+                          {/* Bench */}
+                          <div className="flex-1 relative bg-gradient-to-b from-amber-100/90 to-amber-200/60 rounded-xl border border-amber-300/40 shadow-sm overflow-visible">
+                            <div className="absolute inset-0 opacity-[0.06] pointer-events-none rounded-xl overflow-hidden">
                               <div className="w-full h-px bg-amber-900 mt-3" />
                               <div className="w-full h-px bg-amber-900 mt-5" />
-                              <div className="w-full h-px bg-amber-900 mt-4" />
                             </div>
-
                             <div className="relative grid grid-cols-3 gap-1.5 p-2">
                               {bench.map((slot) => {
                                 if (!slot.occupied) {
-                                  /* ── Empty seat placeholder ── */
                                   return (
-                                    <div
-                                      key={slot.positionId}
-                                      className="flex flex-col items-center justify-center h-[60px] px-1 rounded-lg border border-dashed border-slate-300/50 bg-white/30"
-                                    >
+                                    <div key={slot.positionId} className="flex flex-col items-center justify-center h-[60px] px-1 rounded-lg border border-dashed border-slate-300/50 bg-white/30">
                                       <div className="w-5 h-5 rounded-full border border-dashed border-slate-300/60 bg-white/40 mb-1" />
                                       <span className="text-[9px] text-slate-300 font-medium">{slot.positionId}</span>
                                     </div>
                                   );
                                 }
 
-                                /* ── Occupied seat card ── */
-                                const sessIdx = sessionSeats.findIndex((s) => s.sessionId === slot.sessionId);
-                                const c = getSessionColor(sessIdx);
-                                const isActive =
-                                  activeTooltip?.seatId === slot.seatId && activeTooltip?.sessionId === slot.sessionId;
+                                const st = STATUS_STYLES[slot.status!];
+                                const sessIdx = sessionSeatData.findIndex((s) => s.sessionId === slot.sessionId);
+                                const sessBadge = getSessionBadge(sessIdx);
+                                const isActive = activeTooltip?.seatId === slot.seatId && activeTooltip?.sessionId === slot.sessionId;
                                 const cached = studentCache.current[`${slot.seatId}_${slot.sessionId}`];
 
                                 return (
@@ -497,30 +483,21 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
                                     key={slot.positionId}
                                     className={`
                                       group/seat relative flex flex-col items-center justify-center h-[60px] px-1 rounded-lg cursor-pointer
-                                      bg-gradient-to-b ${c.bg} border ${c.border}
-                                      transition-all duration-200 hover:scale-[1.06] hover:shadow-lg ${c.glow}
-                                      ${isActive ? `scale-[1.06] shadow-lg ${c.glow} ring-2 ring-offset-1 ${c.ring}` : ""}
+                                      bg-gradient-to-b ${st.bg} border ${st.border}
+                                      transition-all duration-200 hover:scale-[1.06] hover:shadow-lg ${st.glow}
+                                      ${isActive ? `scale-[1.06] shadow-lg ${st.glow} ring-2 ring-offset-1 ${st.ring}` : ""}
                                     `}
                                     onMouseEnter={(e) => handleSeatEnter(slot.seatId!, slot.sessionId!, e)}
                                     onMouseLeave={handleSeatLeave}
                                     onClick={(e) => handleSeatClickEvt(slot.seatId!, slot.sessionId!, e)}
                                   >
-                                    {/* Person icon */}
                                     <div className="w-5 h-5 rounded-full bg-white/70 border border-slate-200/50 flex items-center justify-center mb-0.5 shadow-sm">
-                                      <User className={`h-2.5 w-2.5 ${c.text}`} />
+                                      <User className={`h-2.5 w-2.5 ${st.text}`} />
                                     </div>
-
-                                    {/* Seat ID */}
-                                    <span className={`text-[10px] font-bold leading-tight ${c.text}`}>
-                                      {slot.seatId}
-                                    </span>
-
-                                    {/* Session badge */}
-                                    <span className={`text-[7px] font-semibold text-white/90 ${c.badge} px-1.5 py-px rounded-full mt-0.5 leading-tight`}>
+                                    <span className={`text-[10px] font-bold leading-tight ${st.text}`}>{slot.seatId}</span>
+                                    <span className={`text-[7px] font-semibold text-white/90 ${sessBadge} px-1.5 py-px rounded-full mt-0.5 leading-tight`}>
                                       S{slot.sessionId}
                                     </span>
-
-                                    {/* Cached register number — absolute overlay, no height impact */}
                                     {cached && (
                                       <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 z-10 text-[8px] font-bold text-white bg-slate-700/90 px-1.5 py-[1px] rounded-full shadow-md whitespace-nowrap">
                                         {cached}
@@ -529,17 +506,11 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
                                   </div>
                                 );
                               })}
-
-                              {/* Pad the last bench if fewer than 3 slots */}
-                              {bench.length < 3 &&
-                                Array.from({ length: 3 - bench.length }).map((_, i) => (
-                                  <div
-                                    key={`pad-${i}`}
-                                    className="flex items-center justify-center h-[60px] px-1 rounded-lg border border-dashed border-slate-300/50 bg-white/30"
-                                  >
-                                    <span className="text-[10px] text-slate-300">—</span>
-                                  </div>
-                                ))}
+                              {bench.length < 3 && Array.from({ length: 3 - bench.length }).map((_, i) => (
+                                <div key={`pad-${i}`} className="flex items-center justify-center h-[60px] px-1 rounded-lg border border-dashed border-slate-300/50 bg-white/30">
+                                  <span className="text-[10px] text-slate-300">—</span>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         </div>
@@ -551,27 +522,16 @@ const RoomViewModal: React.FC<RoomViewModalProps> = ({
 
               {/* Stats footer */}
               <div className="mt-5 flex items-center justify-center gap-6 text-xs text-slate-500">
-                <span>
-                  Occupied: <strong className="text-slate-700">{occupiedTotal}</strong>
-                </span>
+                <span>Occupied: <strong className="text-slate-700">{occupiedTotal}</strong></span>
                 <span className="text-slate-300">|</span>
-                <span>
-                  Total Positions: <strong className="text-slate-700">{roomGrid.slots.length}</strong>
-                </span>
+                <span>Total: <strong className="text-slate-700">{roomGrid.slots.length}</strong></span>
                 <span className="text-slate-300">|</span>
-                <span>
-                  Benches: <strong className="text-slate-700">{roomGrid.benches.length}</strong>
-                </span>
-                <span className="text-slate-300">|</span>
-                <span>
-                  Sessions: <strong className="text-slate-700">{sessionSeats.length}</strong>
-                </span>
+                <span>Benches: <strong className="text-slate-700">{roomGrid.benches.length}</strong></span>
               </div>
             </>
           )}
         </div>
 
-        {/* Keyframes */}
         <style>{`
           @keyframes rv-fadeInUp {
             from { opacity: 0; transform: translateY(10px); }

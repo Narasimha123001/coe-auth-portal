@@ -27,6 +27,7 @@ import SeatPage from "./pages/admin/SeatAssignmentPage";
 import StaffAppointments from "./pages/staff/MyAppointments";
 import AccessValidation from "./pages/staff/AccessValidation";
 import EntryLogs from "./pages/staff/EntryLogs";
+import InvigilatorAttendance from "./pages/staff/InvigilatorAttendance";
 
 // Student pages
 import BookAppointment from "./pages/student/BookAppointment";
@@ -194,6 +195,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["staff"]}>
                   <EntryLogs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/staff/attendance"
+              element={
+                <ProtectedRoute allowedRoles={["staff"]}>
+                  <InvigilatorAttendance />
                 </ProtectedRoute>
               }
             />

@@ -12,6 +12,7 @@ import {
   User,
   DoorClosed,
   Building2,
+  ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -103,6 +104,12 @@ const navItems: NavItem[] = [
     title: "Entry Logs",
     href: "/staff/logs",
     icon: FileText,
+    roles: ["staff"],
+  },
+  {
+    title: "Exam Attendance",
+    href: "/staff/attendance",
+    icon: ClipboardCheck,
     roles: ["staff"],
   },
 
