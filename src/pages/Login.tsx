@@ -78,86 +78,117 @@ const Login = () => {
   };
 
   return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 relative overflow-hidden">
+      {/* Premium animated background */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-full blur-3xl opacity-20 animate-blob"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500 to-pink-400 rounded-full blur-3xl opacity-15 animate-blob animation-delay-2000"></div>
+      
+      <div className="relative z-10 w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="mx-auto h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center mb-6 shadow-2xl shadow-blue-500/50 transform hover:scale-110 transition-all duration-500">
+            <Shield className="h-11 w-11 text-white" />
+          </div>
+          <h1 className="text-5xl font-black text-white mb-2 tracking-tight">
+            SecureAuth
+          </h1>
+          <p className="text-cyan-300 text-sm font-light tracking-widest">ENTERPRISE ACCESS CONTROL</p>
+        </div>
 
-    <div className="min-h-screen flex items-center justify-center gradient-subtle p-4">
-      <Card className="w-full max-w-md glass-card">
-        <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto h-16 w-16 rounded-2xl bg-primary flex items-center justify-center">
-            <Shield className="h-9 w-9 text-primary-foreground" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-            <CardDescription className="text-base mt-2">
-              Sign in to COE Authentication System
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                className="h-11"
-              />
+        {/* Login Card with glow */}
+        <div className="relative group">
+          {/* Animated gradient border */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-cyan-400 to-purple-500 rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition-all duration-500 animate-pulse"></div>
+          
+          <div className="relative bg-slate-900/80 backdrop-blur-2xl rounded-2xl border border-blue-400/30 p-8 space-y-8">
+            
+            {/* Form Header */}
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-1">Welcome</h2>
+              <p className="text-slate-400 text-sm">Access your account securely</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                className="h-11"
-              />
-            </div>
-            <Button 
-              type="submit"
-              className="w-full h-11 text-base font-medium"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign In'
-              )}
-            </Button>
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t"></div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Email Input */}
+              <div className="space-y-2.5">
+                <label className="text-white font-semibold text-sm">Email Address</label>
+                <input
+                  type="email"
+                  placeholder="your.email@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-blue-400/30 text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30 transition-all hover:border-blue-400/50"
+                />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-card text-muted-foreground">
-                  New user?
-                </span>
+
+              {/* Password Input */}
+              <div className="space-y-2.5">
+                <label className="text-white font-semibold text-sm">Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-blue-400/30 text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30 transition-all hover:border-blue-400/50"
+                />
               </div>
-            </div>
-            <Button 
-              type="button"
-              variant="outline"
-              className="w-full h-11 text-base"
-              disabled={isLoading}
-              asChild
-            >
-              <Link to="/register">
-                Create Account
+
+              {/* Login Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 mt-2 bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-bold rounded-lg hover:from-blue-600 hover:to-cyan-500 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Logging in...</span>
+                  </>
+                ) : (
+                  'Login'
+                )}
+              </button>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 my-6">
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent to-blue-400/30"></div>
+                <span className="text-slate-400 text-xs font-light">NEW USER</span>
+                <div className="flex-1 h-px bg-gradient-to-l from-transparent to-blue-400/30"></div>
+              </div>
+
+              {/* Sign Up Button */}
+              <Link to="/register" className="block">
+                <button
+                  type="button"
+                  className="w-full py-3 border border-blue-400/50 text-cyan-300 font-semibold rounded-lg hover:bg-slate-800/50 hover:border-cyan-400 transition-all duration-300 transform hover:scale-105"
+                >
+                  Register Account
+                </button>
               </Link>
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+
+            {/* Footer Info */}
+            <p className="text-center text-slate-500 text-xs">Secure enterprise authentication</p>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(30px, -50px) scale(1.1); }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+      `}</style>
     </div>
   );
-}
+};
 
 export default Login;

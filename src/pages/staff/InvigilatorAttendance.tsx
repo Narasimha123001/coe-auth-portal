@@ -104,6 +104,8 @@ const InvigilatorAttendance = () => {
   const [seatsLoading, setSeatsLoading] = useState(false);
   const [students, setStudents] = useState<StudentInfo[]>([]);
   const [markingId, setMarkingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchedStudent, setSearchedStudent] = useState<StudentInfo | null>(null);
 
   const studentCache = useRef<Record<string, number>>({});
   const [activeTooltip, setActiveTooltip] = useState<{
@@ -119,22 +121,16 @@ const InvigilatorAttendance = () => {
 
   const loadAssignment = async () => {
     try {
-      setLoading(true);
-      const assignment = await invigilatorApi.getMyAssignment();
-      setRoomId(assignment.roomId);
-      setSessionIds(assignment.sessionIds);
-      setAssignmentDate(assignment.date);
-      setSlotCode(assignment.slotCode);
-    } catch (err: any) {
-      console.error(err);
-      // Fallback: use today's date and default room for demo
-      toast.error("Could not load assignment. Using demo data.");
-      const today = new Date().toISOString().split("T")[0];
+      setLoading(false);
+      // Set fixed values
       setRoomId(6);
       setSessionIds([7, 8, 9]);
+      const today = new Date().toISOString().split("T")[0];
       setAssignmentDate(today);
       setSlotCode("S1");
-    } finally {
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to load assignment.");
       setLoading(false);
     }
   };
@@ -234,15 +230,37 @@ const InvigilatorAttendance = () => {
     setMarkingId(key);
 
     try {
+      // Use correct API: /v1/invigilator/attendance?roomId=6&studentId=12575&sessionId=7
       const result = await invigilatorApi.markAttendance(roomId, student.regNo, student.sessionId);
-      toast.success(result || "Attendance marked successfully");
+      toast.success("Attendance marked successfully");
 
       // Refresh seats data
       await fetchSeats();
     } catch (err: any) {
-      toast.error(err.response?.data || "Failed to mark attendance");
+      toast.error(err.response?.data?.message || "Failed to mark attendance");
     } finally {
       setMarkingId(null);
+    }
+  };
+
+  /* ── Search handler ── */
+  const handleSearch = (regNo: string) => {
+    setSearchQuery(regNo);
+    if (!regNo.trim()) {
+      setSearchedStudent(null);
+      return;
+    }
+    const found = students.find(s => String(s.regNo) === regNo.trim());
+    if (found) {
+      setSearchedStudent(found);
+      // Scroll to the searched student in the list
+      setTimeout(() => {
+        const element = document.getElementById(`student-${found.regNo}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    } else {
+      setSearchedStudent(null);
+      toast.error("Student not found");
     }
   };
 
@@ -315,14 +333,23 @@ const InvigilatorAttendance = () => {
             </p>
           </div>
 
-          <button
-            onClick={fetchSeats}
-            disabled={seatsLoading}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all text-sm font-medium text-slate-700 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${seatsLoading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search Register No..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
+            />
+            <button
+              onClick={fetchSeats}
+              disabled={seatsLoading}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all text-sm font-medium text-slate-700 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${seatsLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+          </div>
         </div>
 
         {/* ── Stats Cards ── */}
@@ -443,6 +470,9 @@ const InvigilatorAttendance = () => {
                                     const st = STATUS_CONFIG[slot.status!];
                                     const isActive = activeTooltip?.seatId === slot.seatId;
                                     const cached = studentCache.current[`${slot.seatId}_${slot.sessionId}`];
+                                    const isSearchedSeat = searchedStudent?.seatId === slot.seatId && searchedStudent?.sessionId === slot.sessionId;
+                                    const seatStudent = students.find(s => s.seatId === slot.seatId && s.sessionId === slot.sessionId);
+                                    const shouldShowRegNo = seatStudent?.status === "PRESENT";
 
                                     return (
                                       <div
@@ -451,13 +481,19 @@ const InvigilatorAttendance = () => {
                                           bg-gradient-to-b ${st.bg} border ${st.border}
                                           transition-all duration-200 hover:scale-105 hover:shadow-md ${st.glow}
                                           ${isActive ? `scale-105 shadow-md ring-2 ring-offset-1 ${st.ring}` : ""}
+                                          ${isSearchedSeat ? "ring-2 ring-blue-500 ring-offset-2 shadow-lg" : ""}
                                         `}
                                         onMouseEnter={(e) => handleSeatHover(slot.seatId!, slot.sessionId!, e)}
                                         onMouseLeave={handleSeatLeave}
                                       >
                                         <User className={`h-2.5 w-2.5 ${st.text} mb-0.5`} />
                                         <span className={`text-[9px] font-bold ${st.text}`}>{slot.seatId}</span>
-                                        {cached && (
+                                        {isSearchedSeat && searchedStudent?.status === "PRESENT" && (
+                                          <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 text-[9px] font-bold text-white bg-blue-600 px-1.5 py-1 rounded-full shadow-md">
+                                            {searchedStudent.regNo}
+                                          </span>
+                                        )}
+                                        {cached && !isSearchedSeat && shouldShowRegNo && (
                                           <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 text-[7px] font-bold text-white bg-slate-700/90 px-1 py-[1px] rounded-full shadow">
                                             {cached}
                                           </span>
@@ -522,9 +558,18 @@ const InvigilatorAttendance = () => {
                       const Icon = st.icon;
                       const key = `${student.seatId}_${student.sessionId}`;
                       const isMarking = markingId === key;
+                      const isSearched = searchedStudent?.seatId === student.seatId && searchedStudent?.sessionId === student.sessionId;
 
                       return (
-                        <div key={key} className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50/80 transition-colors group">
+                        <div 
+                          id={`student-${student.regNo}`}
+                          key={key} 
+                          className={`px-5 py-3 flex items-center gap-3 transition-all group ${
+                            isSearched 
+                              ? "bg-blue-50 border-l-4 border-l-blue-500 shadow-sm" 
+                              : "hover:bg-slate-50/80"
+                          }`}
+                        >
                           {/* Status indicator */}
                           <div className={`p-1.5 rounded-lg ${st.badge}/10 flex-shrink-0`}>
                             <Icon className={`h-4 w-4 ${st.text}`} />
@@ -533,7 +578,18 @@ const InvigilatorAttendance = () => {
                           {/* Student info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-slate-800">{student.regNo}</span>
+                              {student.status !== "PRESENT" && (
+                                <>
+                                  {isSearched && (
+                                    <span className="text-sm font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded-lg">
+                                      {student.regNo}
+                                    </span>
+                                  )}
+                                  {!isSearched && (
+                                    <span className="text-sm font-bold text-slate-800">---</span>
+                                  )}
+                                </>
+                              )}
                               <span className={`text-[9px] font-semibold text-white px-1.5 py-0.5 rounded-full ${st.badge}`}>
                                 {st.label}
                               </span>

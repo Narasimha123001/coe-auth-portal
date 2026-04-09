@@ -100,12 +100,7 @@ const navItems: NavItem[] = [
     icon: CheckCircle,
     roles: ["staff"],
   },
-  {
-    title: "Entry Logs",
-    href: "/staff/logs",
-    icon: FileText,
-    roles: ["staff"],
-  },
+  
   {
     title: "Exam Attendance",
     href: "/staff/attendance",
