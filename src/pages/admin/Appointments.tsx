@@ -10,6 +10,7 @@ import { toast } from "react-hot-toast";
 const AdminAppointments = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [grantedAppointments, setGrantedAppointments] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchAppointments();
@@ -32,6 +33,32 @@ const AdminAppointments = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const toggleGranted = (appointmentId: number) => {
+    setGrantedAppointments((prev) => {
+      const updated = new Set(prev);
+      if (updated.has(appointmentId)) {
+        updated.delete(appointmentId);
+      } else {
+        updated.add(appointmentId);
+      }
+      return updated;
+    });
+
+    // Update the appointment status
+    setAppointments((prev) =>
+      prev.map((apt) =>
+        apt.id === appointmentId
+          ? {
+              ...apt,
+              status: grantedAppointments.has(appointmentId)
+                ? "PENDING"
+                : "APPROVED",
+            }
+          : apt
+      )
+    );
   };
 
   return (
@@ -99,6 +126,21 @@ const AdminAppointments = () => {
                       {format(new Date(appointment.createdDate), "PP")}
                     </div>
                   )}
+
+                  <div className="pt-4 border-t">
+                    <Button
+                      onClick={() => toggleGranted(appointment.id)}
+                      className={`w-full font-semibold ${
+                        grantedAppointments.has(appointment.id)
+                          ? "bg-green-500 hover:bg-green-600"
+                          : "bg-yellow-500 hover:bg-yellow-600"
+                      }`}
+                    >
+                      {grantedAppointments.has(appointment.id)
+                        ? "✓ Granted"
+                        : "Granted"}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
